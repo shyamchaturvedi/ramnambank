@@ -1,6 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&family=Inter:wght@100..900&family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
 @import "tailwindcss";
 
+@theme {
+  --color-saffron: #FF9933;
+  --color-deep-saffron: #E67E22;
+  --color-royal-gold: #D4AF37;
+  --color-sacred-red: #800000;
+}
+
 :root {
   --saffron: #FF9933;
   --deep-saffron: #E67E22;
