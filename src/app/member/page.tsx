@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import Link from 'next/link';
 import { 
   Award, 
   History, 
@@ -10,7 +11,8 @@ import {
   Calendar,
   User,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  Heart
 } from 'lucide-react';
 
 export default function MemberPanel() {

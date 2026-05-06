@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
 import "./globals.css";
-
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
+import AudioPlayer from "@/components/AudioPlayer";
 
 export const viewport: Viewport = {
   themeColor: "#FF9933",
@@ -70,8 +70,6 @@ export const metadata: Metadata = {
   },
 };
 
-import Script from "next/script";
-import AudioPlayer from "@/components/AudioPlayer";
 
 export default function RootLayout({
   children,
