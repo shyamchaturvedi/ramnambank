@@ -96,7 +96,6 @@ export default function VolunteerVerifyPage() {
               ))}
            </div>
         </div>
-      </div>
     </DashboardLayout>
   );
 }
