@@ -133,13 +133,13 @@ export default function DashboardLayout({
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-saffron/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
         
         {/* Top Navigation Bar */}
-        <header className="h-24 glass-nav flex items-center justify-between px-8 shrink-0">
+        <header className="h-24 glass-nav flex items-center justify-between px-8 shrink-0 relative z-50">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setMobileMenuOpen(true)} 
-              className="p-2 text-white/40 hover:text-white lg:hidden"
+              className="p-4 -ml-2 text-white/40 hover:text-white lg:hidden active:bg-white/5 rounded-full transition-all"
             >
-              <Menu size={24} />
+              <Menu size={28} />
             </button>
             <div className="relative hidden md:block">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
