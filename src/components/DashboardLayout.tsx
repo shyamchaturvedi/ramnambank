@@ -83,7 +83,7 @@ export default function DashboardLayout({
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.5, type: 'spring', damping: 20 }}
-        className={`fixed left-0 top-0 h-screen bg-[#0A0A0A] border-r border-white/5 z-[70] transition-all duration-500 ${isMobileMenuOpen ? 'w-[280px] translate-x-0' : 'w-72 -translate-x-full lg:translate-x-0'}`}
+        className={`fixed left-0 top-0 h-screen bg-[#0A0A0A] border-r border-white/5 z-[70] transition-all duration-500 ${isMobileMenuOpen ? 'w-[280px] translate-x-0 pointer-events-auto' : 'w-72 -translate-x-full lg:translate-x-0 pointer-events-none lg:pointer-events-auto'}`}
       >
         <div className="p-8 h-full flex flex-col">
           <div className="flex items-center gap-4 mb-12">
@@ -137,7 +137,7 @@ export default function DashboardLayout({
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setMobileMenuOpen(true)} 
-              className="p-4 -ml-2 text-white/40 hover:text-white lg:hidden active:bg-white/5 rounded-full transition-all"
+              className="p-4 -ml-2 text-white/40 hover:text-white lg:hidden active:bg-white/5 rounded-full transition-all relative z-[100] cursor-pointer"
             >
               <Menu size={28} />
             </button>
