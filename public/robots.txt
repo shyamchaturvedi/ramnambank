@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /client-review/
+
+Sitemap: https://ramnambank.in/sitemap.xml
