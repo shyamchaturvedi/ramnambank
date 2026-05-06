@@ -118,7 +118,7 @@ export default function ClientReviewPage() {
            <div className="space-y-8 text-sm text-white/60 leading-relaxed font-bold uppercase tracking-widest">
               <div className="space-y-4">
                  <h4 className="text-white text-base">1. आध्यात्मिक बैंकिंग चक्र (The Spiritual Cycle)</h4>
-                 <p>यह पोर्टल 'राम नाम' संचय के लिए एक डिजिटल बैंक की तरह काम करता है। भक्त वेबसाइट पर रजिस्टर करता है, उसे एक यूनिक सदस्यता आईडी (RN-ID) मिलती है। वह शाखा से भौतिक पुस्तिका (Copy) लेता है, राम नाम लिखता है और उसे वापस जमा करता है।</p>
+                 <p>यह पोर्टल 'राम नाम' संचय के लिए एक व्यवस्थित बैंक की तरह काम करता है। भक्त वेबसाइट पर रजिस्टर करता है, उसे एक यूनिक सदस्यता आईडी (RN-ID) मिलती है। वह शाखा से भौतिक पुस्तिका (Copy) और विशेष कलम लेता है, राम नाम लिखता है और उसे वापस जमा करता है।</p>
               </div>
               <div className="space-y-4">
                  <h4 className="text-white text-base">2. एडमिन और स्टाफ का रोल (Admin & Staff Roles)</h4>

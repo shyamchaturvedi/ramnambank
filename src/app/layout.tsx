@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     default: "श्री राम नाम महाधन संचय बैंक | Ayodhya Dham Official - World's Largest Spiritual Bank",
     template: "%s | श्री राम नाम महाधन संचय बैंक"
   },
-  description: "अयोध्या धाम से संचालित विश्व का सबसे बड़ा आध्यात्मिक बैंक। जहाँ भक्त प्रभु श्री राम के पावन नाम को अपनी शाश्वत पूंजी के रूप में संचित करते हैं। डिजिटल राम नाम संचय और आध्यात्मिक प्रगति का वैश्विक केंद्र।",
+  description: "अयोध्या धाम से संचालित विश्व का सबसे बड़ा आध्यात्मिक बैंक। जहाँ भक्त प्रभु श्री राम के पावन नाम को अपनी शाश्वत पूंजी के रूप में संचित करते हैं। हस्तलिखित राम नाम संचय और आध्यात्मिक प्रगति का वैश्विक केंद्र।",
   keywords: [
     "Ram Nam Bank", 
     "Ayodhya Ram Mandir", 
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     "Ram Nam Sanchay", 
     "Shri Jagannath OdiaBaba", 
     "Ayodhya Dham Official Site", 
-    "Digital Ram Nam Bank", 
+    "Ram Nam Mahadhan Bank", 
     "Spiritual Wealth",
     "Ram Nam Lekhan",
     "Ram Mantra Sanchay",

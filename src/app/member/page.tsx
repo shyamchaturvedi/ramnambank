@@ -40,7 +40,7 @@ export default function MemberPanel() {
           </div>
           <button className="saffron-btn flex items-center justify-center gap-3 scale-110">
              <Download size={20} />
-             डिजिटल पहचान पत्र
+             सदस्यता पहचान पत्र
           </button>
         </header>
 
