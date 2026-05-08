@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { 
@@ -19,8 +20,19 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Footer from '@/components/Footer';
+import { getAdminStats } from '@/services/dataService';
 
 export default function HomeClient() {
+  const [stats, setStats] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    const loadStats = async () => {
+      const data = await getAdminStats();
+      setStats(data);
+    };
+    loadStats();
+  }, []);
+
   return (
     <div className="min-h-screen bg-black text-white selection:bg-saffron selection:text-black">
         {/* Premium Top Navigation */}
@@ -45,8 +57,10 @@ export default function HomeClient() {
                 <Link href="/about" className="hover:text-saffron transition-colors">हमारे बारे में</Link>
                 <Link href="/mission" className="hover:text-saffron transition-colors">हमारा संकल्प</Link>
                 <Link href="/progress" className="hover:text-saffron transition-colors">वैश्विक प्रगति</Link>
-                <Link href="/branches" className="hover:text-saffron transition-colors">शाखाएं</Link>
-                <Link href="/donate" className="hover:text-saffron transition-colors text-sacred-red">दान एवं सेवा</Link>
+                 <Link href="/committee" className="hover:text-saffron transition-colors">समितियां</Link>
+                 <Link href="/branches" className="hover:text-saffron transition-colors">शाखाएं</Link>
+                 <Link href="/write" className="hover:text-saffron transition-colors">लेखन विधि</Link>
+                 <Link href="/donate" className="hover:text-saffron transition-colors text-sacred-red">दान एवं सेवा</Link>
                 <Link href="/login" className="px-6 py-2 rounded-full border border-white/10 hover:border-saffron/50 transition-all">प्रवेश</Link>
                 <Link href="/open-account" className="saffron-btn">खाता खोलें</Link>
              </div>
@@ -97,7 +111,7 @@ export default function HomeClient() {
               transition={{ duration: 1, delay: 0.5 }}
               className="text-base md:text-xl text-white/70 max-w-3xl mx-auto mb-10 leading-relaxed font-light"
             >
-              विश्व के सबसे अनूठे आध्यात्मिक कोष से जुड़ें, जहाँ भक्त प्रभु श्री राम के पावन नाम को अपनी शाश्वत पूंजी के रूप में संचित करते हैं।
+               विश्व के सबसे अनूठे आध्यात्मिक कोष से जुड़ें, जहाँ भक्त प्रभु श्री राम के पावन नाम को हस्तलिखित "अर्चना पुस्तिका" के रूप में संचित करते हैं।
             </motion.p>
             
             <motion.div
@@ -107,7 +121,7 @@ export default function HomeClient() {
               className="mb-12 p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm inline-block"
             >
               <p className="text-xl md:text-2xl font-serif gold-text italic tracking-wide">
-                “राम नाम बिनु गति नहिं कोई, राम नाम बिनु उद्धार न होई।”
+                “राम नाम के लिखने से ही जीवन का कल्याण संभव है।”
               </p>
             </motion.div>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
@@ -124,6 +138,68 @@ export default function HomeClient() {
           </div>
         </section>
 
+        {/* Certificate & Awards Showcase Section (New) */}
+        <section id="awards" className="py-32 px-6 bg-[#050505] relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-saffron/5 rounded-full blur-[150px] -mr-64 -mt-64"></div>
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-20 space-y-4">
+               <h3 className="text-saffron font-black tracking-[0.3em] uppercase text-xs">परम सम्मान एवं मान्यता</h3>
+               <h2 className="text-4xl md:text-6xl font-bold font-serif">साधना के मील के पत्थर</h2>
+               <p className="text-white/40 max-w-2xl mx-auto uppercase text-[10px] tracking-widest font-bold">आपकी निरंतर साधना को बैंक द्वारा विशेष रूप से सम्मानित किया जाता है</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+               {/* Achievement 1 */}
+               <motion.div whileHover={{ y: -10 }} className="premium-card p-10 space-y-8 group border-b-4 border-white/5 hover:border-saffron/50 transition-all">
+                  <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-white/20 group-hover:bg-saffron/10 group-hover:text-saffron transition-all">
+                    <Award size={32} />
+                  </div>
+                  <div className="space-y-4">
+                    <h4 className="text-xl font-bold gold-text">सहभागिता प्रमाण पत्र</h4>
+                    <p className="text-[10px] text-white/40 uppercase tracking-widest leading-relaxed">1 पुस्तिका (Booklet) पूर्ण होने पर डिजिटल प्रमाण पत्र प्रदान किया जाता है।</p>
+                  </div>
+                  <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                     <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">योग्यता: 1 पुस्तिका</span>
+                     <span className="px-3 py-1 rounded-full bg-white/5 text-[8px] font-black uppercase text-white/40">डिजिटल</span>
+                  </div>
+               </motion.div>
+
+               {/* Achievement 2 */}
+               <motion.div whileHover={{ y: -10 }} className="premium-card p-10 space-y-8 group border-b-4 border-saffron/20 hover:border-saffron/50 transition-all relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4">
+                     <Star size={20} className="text-saffron animate-pulse" />
+                  </div>
+                  <div className="w-16 h-16 rounded-2xl bg-saffron/10 flex items-center justify-center text-saffron shadow-[0_0_20px_rgba(255,153,51,0.2)]">
+                    <Award size={32} />
+                  </div>
+                  <div className="space-y-4">
+                    <h4 className="text-xl font-bold gold-text">विशेष साधक सम्मान</h4>
+                    <p className="text-[10px] text-white/40 uppercase tracking-widest leading-relaxed">5+ पुस्तिकाएं पूर्ण करने पर विशेष मुद्रित प्रमाण पत्र एवं अंगवस्त्र प्रदान किया जाता है।</p>
+                  </div>
+                  <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                     <span className="text-[9px] font-black text-saffron uppercase tracking-widest">योग्यता: 5+ पुस्तिकाएं</span>
+                     <span className="px-3 py-1 rounded-full bg-saffron/20 text-[8px] font-black uppercase text-saffron">मुद्रित</span>
+                  </div>
+               </motion.div>
+
+               {/* Achievement 3 */}
+               <motion.div whileHover={{ y: -10 }} className="premium-card p-10 space-y-8 group border-b-4 border-sacred-red/20 hover:border-sacred-red/50 transition-all">
+                  <div className="w-16 h-16 rounded-2xl bg-sacred-red/10 flex items-center justify-center text-sacred-red">
+                    <Award size={32} />
+                  </div>
+                  <div className="space-y-4">
+                    <h4 className="text-xl font-bold text-sacred-red">राम रत्न सम्मान</h4>
+                    <p className="text-[10px] text-white/40 uppercase tracking-widest leading-relaxed">11+ पुस्तिकाएं पूर्ण करने पर अयोध्या मुख्यालय से स्मृति चिन्ह एवं विशेष पदक प्रदान किया जाता है।</p>
+                  </div>
+                  <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                     <span className="text-[9px] font-black text-sacred-red uppercase tracking-widest">योग्यता: 11+ पुस्तिकाएं</span>
+                     <span className="px-3 py-1 rounded-full bg-sacred-red/20 text-[8px] font-black uppercase text-sacred-red">सर्वोच्च</span>
+                  </div>
+               </motion.div>
+            </div>
+          </div>
+        </section>
+
         {/* Global Counter Section */}
         <section id="stats" className="py-32 px-6 bg-black relative">
           <div className="max-w-7xl mx-auto">
@@ -133,8 +209,8 @@ export default function HomeClient() {
                <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                   <div>
                     <h3 className="text-saffron font-black tracking-[0.3em] uppercase text-xs mb-4">वैश्विक आध्यात्मिक कोष</h3>
-                    <h2 className="text-3xl md:text-5xl font-bold font-serif mb-6 leading-tight">डिजिटल रूप से संचित <br /> कुल राम नाम</h2>
-                    <p className="text-white/40 text-sm mb-10 leading-relaxed uppercase tracking-widest font-bold">हर एक नाम अनंत शक्ति का स्रोत है</p>
+                     <h2 className="text-3xl md:text-5xl font-bold font-serif mb-6 leading-tight">हस्तलिखित संचित <br /> कुल राम नाम</h2>
+                     <p className="text-white/40 text-sm mb-10 leading-relaxed uppercase tracking-widest font-bold">प्रत्येक अक्षर आपकी श्रद्धा का प्रतीक है</p>
                     <div className="flex gap-4">
                        <Link href="/progress" className="px-8 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">विस्तृत रिपोर्ट देखें</Link>
                     </div>
@@ -145,11 +221,15 @@ export default function HomeClient() {
                         <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">कुल संचित नाम</p>
                      </div>
                      <div className="p-8 rounded-3xl bg-white/5 border border-white/10 text-center">
-                        <h4 className="text-4xl font-black gold-text mb-2 font-mono tracking-tighter">1.2 Lakh</h4>
+                        <h4 className="text-4xl font-black gold-text mb-2 font-mono tracking-tighter">
+                          {stats?.totalBhakt ? stats.totalBhakt.toLocaleString() : '6,000'}+
+                        </h4>
                         <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">सक्रिय भक्त</p>
                      </div>
                      <div className="p-8 rounded-3xl bg-white/5 border border-white/10 text-center">
-                        <h4 className="text-4xl font-black gold-text mb-2 font-mono tracking-tighter">450+</h4>
+                        <h4 className="text-4xl font-black gold-text mb-2 font-mono tracking-tighter">
+                          {stats?.totalBranches || '30'}+
+                        </h4>
                         <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">वैश्विक शाखाएं</p>
                      </div>
                      <div className="p-8 rounded-3xl bg-saffron/10 border border-saffron/20 text-center">
@@ -177,17 +257,17 @@ export default function HomeClient() {
                 {
                   name: "राम प्रसाद",
                   city: "अयोध्या",
-                  exp: "राम नाम बैंक से जुड़ने के बाद मेरे जीवन में एक अद्भुत शांति का अनुभव हुआ है। आध्यात्मिक पूंजी संचित करना अब मेरी दिनचर्या का हिस्सा है।"
+                  exp: "राम नाम अर्चना पुस्तिका में लिखने से मेरे जीवन में एक अद्भुत शांति का अनुभव हुआ है। हस्तलिपि में नाम संचित करना अब मेरी दिनचर्या का हिस्सा है।"
                 },
                 {
                   name: "सीता देवी",
                   city: "वाराणसी",
-                  exp: "डिजिटल माध्यम से राम नाम लिखना बहुत ही सरल और प्रभावशाली है। यह हमें हर पल प्रभु के करीब रखता है।"
+                  exp: "सनातनी पेन से राम नाम लिखना बहुत ही प्रभावशाली है। यह हमें हर पल प्रभु के करीब और एकाग्र रखता है।"
                 },
                 {
                   name: "राजेश खन्ना",
                   city: "मुंबई",
-                  exp: "जब से मैंने इस पावन कार्य में भाग लिया है, मेरी मानसिक एकाग्रता बढ़ी है और मुझे प्रभु की उपस्थिति का हर समय आभास होता है।"
+                  exp: "जब से मैंने अपनी पहली अर्चना पुस्तिका पूर्ण की है, मेरी मानसिक एकाग्रता बढ़ी है और मुझे प्रभु की उपस्थिति का आभास होता है।"
                 }
               ].map((item, idx) => (
                 <div key={idx} className="p-10 rounded-3xl bg-white/5 border border-white/10 hover:border-saffron/30 transition-all group">

@@ -41,7 +41,7 @@ export default function AboutClient() {
                    whileInView={{ opacity: 1, x: 0 }}
                    className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-saffron/10 border border-saffron/20 text-saffron text-[10px] font-black uppercase tracking-widest"
                  >
-                    <Award size={14} /> श्री जगन्नाथ ओडियाबाबा सेवा संस्थान
+                    <Award size={14} /> श्री जगन्नाथ ओड़िआ बाबा सेवा संस्थान
                  </motion.div>
                  <h2 className="text-4xl md:text-6xl font-black font-serif gold-text leading-tight">अयोध्या धाम की <br /> एक पावन परंपरा।</h2>
                  <p className="text-white/40 text-lg leading-relaxed font-light">

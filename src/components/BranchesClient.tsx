@@ -12,15 +12,20 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
+import { getBranches } from '@/services/dataService';
 
 export default function BranchesClient() {
-  const branches = [
-    { name: 'अयोध्या मुख्यालय (Main)', address: 'श्री जगन्नाथ ओडियाबाबा सेवा संस्थान, अयोध्या धाम', phone: '9598023701', city: 'Ayodhya' },
-    { name: 'वाराणसी शाखा', address: 'अस्सी घाट, वाराणसी, उत्तर प्रदेश', phone: '99XXXXXX01', city: 'Varanasi' },
-    { name: 'मथुरा शाखा', address: 'वृंदावन रोड, मथुरा, उत्तर प्रदेश', phone: '99XXXXXX02', city: 'Mathura' },
-    { name: 'इंदौर शाखा', address: 'राजबाड़ा चौराहा, इंदौर, मध्य प्रदेश', phone: '99XXXXXX03', city: 'Indore' },
-    { name: 'मुंबई शाखा', address: 'अंधेरी वेस्ट, मुंबई, महाराष्ट्र', phone: '99XXXXXX04', city: 'Mumbai' },
-  ];
+  const [branches, setBranches] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const loadData = async () => {
+      const data = await getBranches();
+      setBranches(data);
+      setLoading(false);
+    };
+    loadData();
+  }, []);
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
@@ -59,7 +64,19 @@ export default function BranchesClient() {
                    <div className="p-4 bg-saffron/10 rounded-2xl text-saffron">
                       <MapPin size={24} />
                    </div>
-                   <span className="text-[10px] font-black text-white/20 uppercase tracking-widest px-3 py-1 bg-white/5 rounded-full">{branch.city}</span>
+                    <div className="flex flex-col items-end gap-2">
+                       <span className="text-[10px] font-black text-white/20 uppercase tracking-widest px-3 py-1 bg-white/5 rounded-full">{branch.city}</span>
+                       {branch.status === 'ACTIVE' ? (
+                         <div className="flex items-center gap-1.5 text-[8px] font-black text-green-400 uppercase tracking-widest bg-green-400/10 px-2 py-0.5 rounded-full border border-green-400/20">
+                            <div className="w-1 h-1 rounded-full bg-green-400 animate-pulse"></div>
+                            ACTIVE
+                         </div>
+                       ) : (
+                         <div className="flex items-center gap-1.5 text-[8px] font-black text-white/20 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
+                            PROPOSED
+                         </div>
+                       )}
+                    </div>
                 </div>
                 <div className="space-y-4">
                    <h3 className="text-2xl font-black gold-text uppercase">{branch.name}</h3>

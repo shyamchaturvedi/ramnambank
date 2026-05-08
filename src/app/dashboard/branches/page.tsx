@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import { MapPin, Plus, MoreVertical, ShieldCheck } from 'lucide-react';
 
@@ -20,10 +21,10 @@ export default function BranchesPage() {
             <h2 className="text-3xl font-black font-serif uppercase gold-text">शाखा प्रबंधन (Branches)</h2>
             <p className="text-white/40 text-sm mt-1">पूरे देश में फैली बैंक की शाखाओं का विवरण।</p>
           </div>
-          <button className="saffron-btn flex items-center gap-3 text-xs">
+          <Link href="/dashboard/branches/add" className="saffron-btn flex items-center gap-3 text-xs">
             <Plus size={18} />
             नई शाखा जोड़ें
-          </button>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

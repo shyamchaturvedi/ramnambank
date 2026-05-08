@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// We create a separate client for middleware to avoid issues with env vars in edge
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -10,30 +9,37 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Exclude dashboard, api, and static files from maintenance check
-  if (
-    pathname.startsWith('/dashboard') || 
-    pathname.startsWith('/api') || 
-    pathname.startsWith('/_next') || 
-    pathname.startsWith('/maintenance') ||
-    pathname.includes('.') // for images, favicons etc
-  ) {
-    return NextResponse.next();
+  // 1. Session Check for Dashboard
+  const sessionToken = request.cookies.get('sb-access-token')?.value || 
+                       request.cookies.get('supabase-auth-token')?.value;
+
+  if (pathname.startsWith('/dashboard')) {
+    if (!sessionToken) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
   }
 
-  try {
-    // 2. Check maintenance mode from Supabase
-    const { data } = await supabase
-      .from('site_settings')
-      .select('value')
-      .eq('key', 'maintenance_mode')
-      .single();
+  // 2. Maintenance Check (excluding dashboard and essential paths)
+  if (
+    !pathname.startsWith('/dashboard') && 
+    !pathname.startsWith('/api') && 
+    !pathname.startsWith('/_next') && 
+    !pathname.startsWith('/maintenance') &&
+    !pathname.includes('.')
+  ) {
+    try {
+      const { data } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'maintenance_mode')
+        .single();
 
-    if (data && data.value === 'true') {
-      return NextResponse.redirect(new URL('/maintenance', request.url));
+      if (data && data.value === 'true') {
+        return NextResponse.redirect(new URL('/maintenance', request.url));
+      }
+    } catch (e) {
+      // Fail silently for maintenance to avoid breaking the site on DB hiccups
     }
-  } catch (e) {
-    console.error('Middleware maintenance check failed:', e);
   }
 
   return NextResponse.next();

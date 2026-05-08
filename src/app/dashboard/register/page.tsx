@@ -3,9 +3,24 @@
 import React, { useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { UserPlus, Save, ShieldCheck, MapPin, QrCode, CreditCard } from 'lucide-react';
+import { getBranches, generateMemberId } from '@/services/dataService';
 
 export default function MemberRegistration() {
   const [membership, setMembership] = useState<'REGULAR' | 'LIFE'>('REGULAR');
+  const [branches, setBranches] = useState<any[]>([]);
+  const [selectedDistrict, setSelectedDistrict] = useState('');
+  const [selectedBlock, setSelectedBlock] = useState<any>(null);
+
+  React.useEffect(() => {
+    const loadBranches = async () => {
+      const data = await getBranches();
+      setBranches(data);
+    };
+    loadBranches();
+  }, []);
+
+  const districts = Array.from(new Set(branches.filter(b => b.code.startsWith('OD/')).map(b => b.city)));
+  const blocks = branches.filter(b => b.city === selectedDistrict && b.code.includes('/'));
 
   return (
     <DashboardLayout>
@@ -21,6 +36,14 @@ export default function MemberRegistration() {
                 पंजीकरण पूर्ण करें
              </button>
           </div>
+        </div>
+
+        <div className="p-6 bg-saffron/5 border border-saffron/20 rounded-2xl flex items-center gap-4 text-saffron">
+           <ShieldCheck size={24} />
+           <div>
+              <p className="text-xs font-black uppercase tracking-widest">सुरक्षा सूचना (Security Note)</p>
+              <p className="text-[10px] font-bold text-white/60 mt-1 uppercase">नए भक्त का डिफ़ॉल्ट पासवर्ड <span className="text-white font-black px-2 py-0.5 bg-saffron/20 rounded">RamRam@108</span> होगा।</p>
+           </div>
         </div>
 
         <form className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-white">
@@ -51,24 +74,47 @@ export default function MemberRegistration() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">राज्य</label>
-                  <select className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl outline-none focus:border-saffron/50 text-white transition-all appearance-none text-sm">
-                    <option className="bg-black">राज्य चुनें</option>
-                    <option className="bg-black">उत्तर प्रदेश</option>
-                  </select>
+                  <input readOnly value="ओड़िशा" className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl outline-none text-white/40 text-sm font-bold" />
                 </div>
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">जिला</label>
-                  <select className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl outline-none focus:border-saffron/50 text-white appearance-none transition-all text-sm">
-                    <option className="bg-black">जिला चुनें</option>
+                  <select 
+                    className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl outline-none focus:border-saffron/50 text-white transition-all appearance-none text-sm"
+                    value={selectedDistrict}
+                    onChange={(e) => {
+                      setSelectedDistrict(e.target.value);
+                      setSelectedBlock(null);
+                    }}
+                  >
+                    <option value="" className="bg-black">जिला चुनें</option>
+                    {districts.map(d => <option key={d} value={d} className="bg-black">{d}</option>)}
                   </select>
                 </div>
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">ब्लॉक / तहसील</label>
-                  <select className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl outline-none focus:border-saffron/50 text-white appearance-none transition-all text-sm">
-                    <option className="bg-black">ब्लॉक चुनें</option>
+                  <select 
+                    className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl outline-none focus:border-saffron/50 text-white appearance-none transition-all text-sm disabled:opacity-30"
+                    disabled={!selectedDistrict}
+                    value={selectedBlock?.code || ''}
+                    onChange={(e) => {
+                      const block = blocks.find(b => b.code === e.target.value);
+                      setSelectedBlock(block);
+                    }}
+                  >
+                    <option value="" className="bg-black">ब्लॉक चुनें</option>
+                    {blocks.map(b => <option key={b.code} value={b.code} className="bg-black">{b.name}</option>)}
                   </select>
                 </div>
               </div>
+              
+              {selectedBlock && (
+                <div className="p-6 bg-white/5 border border-white/10 rounded-2xl text-center space-y-2">
+                  <p className="text-[9px] font-black text-saffron uppercase tracking-[0.3em]">अलॉट की जाने वाली सदस्य ID</p>
+                  <p className="text-xl font-black text-white font-mono tracking-tighter">
+                    {generateMemberId(selectedBlock.code, 6001)}
+                  </p>
+                </div>
+              )}
             </section>
 
             {/* Dynamic Payment Section */}

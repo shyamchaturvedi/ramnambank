@@ -15,13 +15,38 @@ import {
 import { motion } from 'framer-motion';
 import Footer from '@/components/Footer';
 
+import { getMembershipPlans, getSettings } from '@/services/dataService';
+import * as LucideIcons from 'lucide-react';
+
 const donationCauses = [
-  { id: 1, title: 'अर्चना पुस्तिका छपाई', desc: '1000 नई कॉपियों की छपाई और वितरण में सहयोग करें।', amount: '₹1100', icon: BookOpen },
-  { id: 2, title: 'साधु एवं संत सेवा', desc: 'अयोध्या धाम में संतों के भोजन और सेवा में योगदान।', amount: '₹2100', icon: Heart },
-  { id: 3, title: 'डिजिटल विस्तार', desc: 'राम नाम बैंक की तकनीक और वैश्विक पहुंच को बढ़ाने में मदद।', amount: '₹5100', icon: Users },
+  { id: 1, title: 'अर्चना पुस्तिका छपाई', desc: 'नई कॉपियों की छपाई और वितरण में सहयोग करें।', amount: '₹1100', icon: LucideIcons.BookOpen },
+  { id: 2, title: 'साधु एवं संत सेवा', desc: 'अयोध्या धाम में संतों के भोजन और सेवा में योगदान।', amount: '₹2100', icon: LucideIcons.Heart },
+  { id: 3, title: 'डिजिटल विस्तार', desc: 'राम नाम बैंक की तकनीक और वैश्विक पहुंच को बढ़ाने में मदद।', amount: '₹5100', icon: LucideIcons.Users },
 ];
 
 export default function DonateClient() {
+  const [membershipPlans, setMembershipPlans] = React.useState<any[]>([]);
+  const [upiId, setUpiId] = React.useState('ramnam.bank@upi');
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const loadData = async () => {
+      const [plans, settings] = await Promise.all([
+        getMembershipPlans(),
+        getSettings()
+      ]);
+      setMembershipPlans(plans);
+      if (settings?.upi_id) setUpiId(settings.upi_id);
+      setLoading(false);
+    };
+    loadData();
+  }, []);
+
+  const getIcon = (name: string) => {
+    // @ts-ignore
+    const Icon = LucideIcons[name] || LucideIcons.Award;
+    return <Icon size={32} />;
+  };
   return (
     <div className="min-h-screen bg-black text-white selection:bg-saffron selection:text-black flex flex-col">
       {/* Background Decor */}
@@ -110,31 +135,63 @@ export default function DonateClient() {
                 <div className="w-64 h-64 bg-white p-4 rounded-3xl mx-auto shadow-[0_0_50px_rgba(255,153,51,0.2)]">
                    <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center border-4 border-dashed border-gray-300">
                       <QrCode size={80} className="text-gray-400" />
-                      <span className="text-[10px] text-gray-500 mt-4 font-black uppercase tracking-widest">ramnam@upi</span>
+                      <span className="text-[10px] text-gray-500 mt-4 font-black uppercase tracking-widest">{upiId}</span>
                    </div>
                 </div>
 
                 <div className="space-y-6 text-center">
                    <div className="p-6 bg-white/5 border border-white/10 rounded-2xl">
                       <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-2">UPI ID:</p>
-                      <p className="text-xl font-black gold-text tracking-widest">ramnam.bank@upi</p>
+                      <p className="text-xl font-black gold-text tracking-widest">{upiId}</p>
                    </div>
-                   <div className="p-6 bg-white/5 border border-white/10 rounded-2xl text-left space-y-4">
-                      <h5 className="text-[10px] font-black text-white/30 uppercase tracking-widest">बैंक विवरण (Bank Details)</h5>
-                      <div className="space-y-2 text-xs font-bold">
-                         <p className="text-white/60">खाता: श्री जगन्नाथ ओडियाबाबा सेवा संस्थान</p>
-                         <p className="text-white/60">बैंक: स्टेट बैंक ऑफ इंडिया (SBI)</p>
-                         <p className="text-white/60">IFSC: SBIN0000XXX</p>
-                      </div>
-                   </div>
+                    <div className="p-6 bg-white/5 border border-white/10 rounded-2xl text-left space-y-4">
+                       <h5 className="text-[10px] font-black text-white/30 uppercase tracking-widest">बैंक विवरण (Bank Details)</h5>
+                       <div className="space-y-2 text-xs font-bold">
+                          <p className="text-white/60">खाता: श्री जगन्नाथ ओड़िआ बाबा सेवा संस्थान</p>
+                          <p className="text-white/60">बैंक: स्टेट बैंक ऑफ इंडिया (SBI)</p>
+                          <p className="text-white/60">IFSC: SBIN0000XXX</p>
+                       </div>
+                    </div>
                 </div>
 
                 <div className="flex items-center justify-center gap-3 text-[10px] font-black text-white/20 uppercase tracking-[0.2em] pt-4">
                    <ShieldCheck size={16} className="text-saffron" />
                    80G कर छूट उपलब्ध
                 </div>
-             </motion.div>
-          </div>
+              </motion.div>
+           </div>
+
+           {/* Membership Plans Section */}
+           <section className="space-y-12">
+              <div className="text-center">
+                 <h3 className="text-saffron font-black tracking-[0.3em] uppercase text-xs mb-4">सदस्यता के प्रकार</h3>
+                 <h2 className="text-3xl md:text-5xl font-bold font-serif gold-text">संस्थान की सदस्यता ग्रहण करें</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                 {membershipPlans.map((plan, i) => (
+                    <motion.div 
+                      key={plan.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="premium-card p-10 flex flex-col items-center text-center space-y-6 hover:border-saffron/30 transition-all"
+                    >
+                       <div className="p-4 bg-saffron/10 rounded-full text-saffron">
+                          {getIcon(plan.icon_name)}
+                       </div>
+                       <div>
+                          <h4 className="text-xl font-bold uppercase tracking-wider">{plan.title}</h4>
+                          <p className="text-[10px] text-white/30 uppercase tracking-widest font-bold mt-1">{plan.org}</p>
+                       </div>
+                       <p className="text-white/40 text-xs leading-relaxed">{plan.desc}</p>
+                       <div className="pt-4 mt-auto w-full">
+                          <div className="text-2xl font-black gold-text mb-6">{plan.amount}</div>
+                          <button className="saffron-btn w-full text-[10px]">सदस्य बनें</button>
+                       </div>
+                    </motion.div>
+                 ))}
+              </div>
+           </section>
 
           {/* Social Proof */}
           <section className="text-center space-y-12 pb-20">

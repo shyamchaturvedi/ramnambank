@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -21,9 +21,14 @@ import {
   CheckCircle2,
   User,
   FileSearch,
-  IndianRupee
+  IndianRupee,
+  Upload,
+  Building2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+import { createClient } from '@supabase/supabase-js';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardLayout({
   children,
@@ -32,6 +37,50 @@ export default function DashboardLayout({
 }) {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  // 1. Anti-Debug Security
+  useEffect(() => {
+    const handleDevTools = (e: KeyboardEvent) => {
+      // Block F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+      if (
+        e.key === 'F12' || 
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
+        (e.ctrlKey && e.key === 'U')
+      ) {
+        e.preventDefault();
+        alert('सुरक्षा कारणों से डेवलपर मोड प्रतिबंधित है!');
+        supabase.auth.signOut().then(() => router.push('/login'));
+      }
+    };
+
+    const detectDevTools = () => {
+      const threshold = 160;
+      if (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold) {
+        // DevTools likely open
+        supabase.auth.signOut().then(() => router.push('/login'));
+      }
+    };
+
+    window.addEventListener('keydown', handleDevTools);
+    const interval = setInterval(detectDevTools, 2000);
+    
+    // Disable Right Click
+    document.oncontextmenu = (e) => {
+      e.preventDefault();
+      return false;
+    };
+
+    return () => {
+      window.removeEventListener('keydown', handleDevTools);
+      clearInterval(interval);
+      document.oncontextmenu = null;
+    };
+  }, []);
 
   // Mock role - In real app, this comes from your Auth Context
   const userRole = 'ADMIN'; 
@@ -40,6 +89,8 @@ export default function DashboardLayout({
     ADMIN: [
       { name: 'ओवरव्यू', icon: LayoutDashboard, href: '/dashboard' },
       { name: 'यूजर मैनेजमेंट', icon: Users, href: '/dashboard/users' },
+      { name: 'शाखा प्रबंधन', icon: Building2, href: '/dashboard/admin/branches' },
+      { name: 'बल्क अपलोड', icon: Upload, href: '/dashboard/bulk-upload' },
       { name: 'दान प्रबंधन', icon: IndianRupee, href: '/dashboard/donations' },
       { name: 'संग्रह एवं सत्यापन', icon: CheckCircle2, href: '/dashboard/verify' },
       { name: 'शाखा इन्वेंटरी', icon: Box, href: '/dashboard/inventory' },
@@ -49,6 +100,7 @@ export default function DashboardLayout({
     BRANCH_MANAGER: [
       { name: 'शाखा डैशबोर्ड', icon: LayoutDashboard, href: '/dashboard' },
       { name: 'मेरे भक्त', icon: Users, href: '/dashboard/devotees' },
+      { name: 'मेरी शाखा', icon: Building2, href: '/dashboard/my-branch' },
       { name: 'स्टॉक प्रबंधन', icon: Box, href: '/dashboard/inventory' },
     ],
     VOLUNTEER: [
@@ -80,12 +132,23 @@ export default function DashboardLayout({
 
       {/* Sidebar */}
       <motion.aside 
-        initial={{ x: -100, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.5, type: 'spring', damping: 20 }}
-        className={`fixed left-0 top-0 h-screen bg-[#0A0A0A] border-r border-white/5 z-[70] transition-all duration-500 ${isMobileMenuOpen ? 'w-[280px] translate-x-0 pointer-events-auto' : 'w-72 -translate-x-full lg:translate-x-0 pointer-events-none lg:pointer-events-auto'}`}
+        initial={false}
+        animate={{ 
+          x: isMobileMenuOpen ? 0 : (typeof window !== 'undefined' && window.innerWidth < 1024 ? -300 : 0),
+          opacity: 1 
+        }}
+        transition={{ duration: 0.4, type: 'spring', damping: 25 }}
+        className={`fixed left-0 top-0 h-screen bg-[#0A0A0A] border-r border-white/5 z-[100] lg:z-[70] w-72 lg:translate-x-0 transition-shadow ${isMobileMenuOpen ? 'shadow-[0_0_50px_rgba(0,0,0,0.8)]' : ''}`}
       >
-        <div className="p-8 h-full flex flex-col">
+        <div className="p-8 h-full flex flex-col relative">
+          {/* Close button for mobile */}
+          <button 
+            onClick={() => setMobileMenuOpen(false)}
+            className="absolute top-6 right-6 p-2 text-white/20 hover:text-saffron lg:hidden"
+          >
+            <X size={24} />
+          </button>
+
           <div className="flex items-center gap-4 mb-12">
              <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-saffron/20 sacred-glow">
                 <Image src="/logo.png" alt="Logo" fill className="object-cover" />
@@ -136,10 +199,10 @@ export default function DashboardLayout({
         <header className="h-24 glass-nav flex items-center justify-between px-8 shrink-0 relative z-50">
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => setMobileMenuOpen(true)} 
-              className="p-4 -ml-2 text-white/40 hover:text-white lg:hidden active:bg-white/5 rounded-full transition-all relative z-[100] cursor-pointer"
+              onClick={(e) => { e.stopPropagation(); setMobileMenuOpen(true); }} 
+              className="p-3 bg-white/5 border border-white/10 rounded-xl text-saffron lg:hidden hover:bg-saffron/10 transition-all relative z-[50]"
             >
-              <Menu size={28} />
+              <Menu size={24} />
             </button>
             <div className="relative hidden md:block">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />

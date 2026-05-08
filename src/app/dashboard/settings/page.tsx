@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { dataService } from '@/services/dataService';
+import { getSettings, updateSetting } from '@/services/dataService';
 import { 
   CreditCard, 
   ShieldCheck, 
@@ -28,7 +28,7 @@ export default function SettingsPage() {
   useEffect(() => {
     async function loadSettings() {
       try {
-        const settings = await dataService.getSettings();
+        const settings = await getSettings();
         if (settings) {
           setMaintenanceMode(!!settings.maintenance_mode);
           setRegEnabled(settings.registration_enabled !== false);
@@ -184,7 +184,7 @@ export default function SettingsPage() {
                         if (item.key === 'registration_enabled') setRegEnabled(newVal);
                         
                         try {
-                          await dataService.updateSetting(item.key, newVal);
+                          await updateSetting(item.key, newVal);
                         } catch (e) {
                           console.error("Error updating setting:", e);
                         }

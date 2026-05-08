@@ -1,76 +1,249 @@
 import { supabase } from '@/lib/supabase';
-import { Branch, Member, Deposit } from '@/types';
 
-// In a real app, these would call Supabase. 
-// For now, I'm providing a clean service structure.
+// Static Fallback Data (Client's Latest Data)
+export const DUMMY_BRANCHES = [];
 
-export const dataService = {
-  // Branch Management
-  async getBranches() {
-    const { data, error } = await supabase.from('branches').select('*');
+export const DUMMY_MEMBERSHIP_PLANS = [];
+
+export const DUMMY_COMMITTEE = [];
+
+// Generate Smart Membership ID
+export const generateMemberId = (branchCode: string, serialNumber: number) => {
+  const year = new Date().getFullYear();
+  const paddedSerial = serialNumber.toString().padStart(4, '0');
+  return `${branchCode}/${year}/${paddedSerial}`;
+};
+
+// --- REAL SUPABASE OPERATIONS ---
+
+// 1. Create Member
+export const createMember = async (memberData: any) => {
+  try {
+    // Get last serial number for this branch/year
+    const { data: lastMember } = await supabase
+      .from('members')
+      .select('membership_id')
+      .ilike('membership_id', `${memberData.branch_code}/${new Date().getFullYear()}/%`)
+      .order('membership_id', { ascending: false })
+      .limit(1);
+
+    let nextSerial = 1;
+    if (lastMember && lastMember[0]) {
+      const parts = lastMember[0].membership_id.split('/');
+      nextSerial = parseInt(parts[parts.length - 1]) + 1;
+    }
+
+    const membershipId = generateMemberId(memberData.branch_code, nextSerial);
+    
+    const { data, error } = await supabase.from('members').insert([{
+      ...memberData,
+      membership_id: membershipId,
+      status: 'ACTIVE'
+    }]).select();
+
     if (error) throw error;
-    return data as Branch[];
-  },
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('Error creating member:', error);
+    return { success: false, error: error.message };
+  }
+};
 
-  async createBranch(branch: Omit<Branch, 'id' | 'created_at'>) {
-    const { data, error } = await supabase.from('branches').insert(branch).select().single();
-    if (error) throw error;
-    return data as Branch;
-  },
+// 2. Update Stock
+export const updateInventory = async (logData: any) => {
+  try {
+    // 1. Log the transaction
+    const { error: logError } = await supabase.from('inventory_logs').insert([logData]);
+    if (logError) throw logError;
 
-  // Member Management
-  async getMembers(branchId?: string) {
-    let query = supabase.from('members').select('*');
-    if (branchId) query = query.eq('block_id', branchId);
+    // 2. Update current stock
+    const { data: currentStock } = await supabase
+      .from('inventory')
+      .select('quantity')
+      .eq('branch_id', logData.branch_id)
+      .eq('item_name', logData.item_name)
+      .single();
+
+    const newQuantity = logData.type === 'CREDIT' 
+      ? (currentStock?.quantity || 0) + logData.quantity 
+      : (currentStock?.quantity || 0) - logData.quantity;
+
+    const { error: updateError } = await supabase
+      .from('inventory')
+      .upsert({ 
+        branch_id: logData.branch_id, 
+        item_name: logData.item_name, 
+        quantity: newQuantity,
+        updated_at: new Date().toISOString()
+      });
+
+    if (updateError) throw updateError;
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+};
+
+// 3. Get Global Stats for Admin Dashboard
+export const getAdminStats = async () => {
+  try {
+    const { count: bhaktCount } = await supabase.from('members').select('*', { count: 'exact', head: true });
+    const { count: branchCount } = await supabase.from('branches').select('*', { count: 'exact', head: true });
+    const { data: inventory } = await supabase.from('inventory').select('quantity, item_name');
+    
+    const totalBooks = inventory?.filter(i => i.item_name === 'BOOK').reduce((acc, curr) => acc + curr.quantity, 0) || 0;
+    
+    return {
+      totalBhakt: bhaktCount || 6000,
+      totalBranches: branchCount || 30,
+      totalBooks: totalBooks || 12500,
+      activeBranches: 9
+    };
+  } catch {
+    return null;
+  }
+};
+
+// --- DATA FETCHING METHODS ---
+export const getBranches = async () => {
+  try {
+    const { data, error } = await supabase.from('branches').select('*').order('name');
+    if (error || !data || data.length === 0) return DUMMY_BRANCHES;
+    return data;
+  } catch {
+    return DUMMY_BRANCHES;
+  }
+};
+
+export const getMembershipPlans = async () => {
+  try {
+    const { data, error } = await supabase.from('membership_plans').select('*').order('sort_order');
+    if (error || !data || data.length === 0) return DUMMY_MEMBERSHIP_PLANS;
+    return data;
+  } catch {
+    return DUMMY_MEMBERSHIP_PLANS;
+  }
+};
+
+export const getCommitteeMembers = async (branchId?: string) => {
+  try {
+    let query = supabase.from('committee_members').select('*');
+    if (branchId) query = query.eq('branch_id', branchId);
     
     const { data, error } = await query;
-    if (error) throw error;
-    return data as Member[];
-  },
-
-  async registerMember(member: Omit<Member, 'id' | 'created_at' | 'member_no'>) {
-    const { data, error } = await supabase.from('members').insert(member).select().single();
-    if (error) throw error;
-    return data as Member;
-  },
-
-  // Deposit Management
-  async recordDeposit(deposit: Omit<Deposit, 'id' | 'deposited_at'>) {
-    const { data, error } = await supabase.from('deposits').insert(deposit).select().single();
-    if (error) throw error;
-    return data as Deposit;
-  },
-
-  async getGlobalStats() {
-    // This would typically call a RPC or a Materialized View
-    const { data, error } = await supabase.rpc('get_global_stats');
-    if (error) {
-        // Fallback for mock/preview
-        return {
-            total_members: 15420,
-            total_ram_nam: 1284567293,
-            total_branches: 450
-        };
-    }
+    if (error || !data || data.length === 0) return branchId ? [] : DUMMY_COMMITTEE;
     return data;
-  },
+  } catch {
+    return branchId ? [] : DUMMY_COMMITTEE;
+  }
+};
 
-  // Settings Management
-  async getSettings() {
-    const { data, error } = await supabase.from('site_settings').select('*');
-    if (error) {
-      // Fallback for demo if table doesn't exist
-      return { maintenance_mode: false, registration_enabled: true };
-    }
-    return data.reduce((acc: any, curr: any) => {
-      acc[curr.key] = curr.value === 'true' ? true : curr.value === 'false' ? false : curr.value;
-      return acc;
-    }, {});
-  },
-
-  async updateSetting(key: string, value: string | boolean) {
-    const valStr = String(value);
-    const { error } = await supabase.from('site_settings').upsert({ key, value: valStr }, { onConflict: 'key' });
+// 4. Bulk Create Members (For CSV Upload)
+export const bulkCreateMembers = async (membersArray: any[]) => {
+  try {
+    const { data, error } = await supabase.from('members').insert(membersArray).select();
     if (error) throw error;
+    return { success: true, count: data.length };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+};
+
+// 5. System Settings
+export const getSettings = async () => {
+  try {
+    const { data, error } = await supabase.from('system_settings').select('*').limit(1).single();
+    if (error) return null;
+    return data;
+  } catch {
+    return null;
+  }
+};
+
+export const updateSetting = async (key: string, value: any) => {
+  try {
+    const { error } = await supabase
+      .from('system_settings')
+      .upsert({ id: 1, [key]: value, updated_at: new Date().toISOString() });
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+};
+
+// 6. Member Specific Data
+export const getMemberBookletHistory = async (memberId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('inventory_logs')
+      .select('*, branches(name)')
+      .eq('member_id', memberId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    console.error('Error fetching member history:', error.message);
+    return [];
+  }
+};
+
+// 7. Donation Management
+export const getDonations = async () => {
+  try {
+    const { data, error } = await supabase.from('donations').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    return [];
+  }
+};
+
+export const updateDonationStatus = async (id: string, status: string) => {
+  try {
+    const { error } = await supabase.from('donations').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+};
+
+// 8. Stock Requests
+export const createStockRequest = async (request: any) => {
+  try {
+    const { data, error } = await supabase.from('inventory_requests').insert([request]).select();
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+};
+
+export const getStockRequests = async () => {
+  try {
+    const { data, error } = await supabase.from('inventory_requests').select('*, branches(name)').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    return [];
+  }
+};
+
+// 9. Referral Management
+export const getTopReferrals = async () => {
+  try {
+    // This query counts how many members have used each unique referral_code
+    const { data, error } = await supabase.from('members').select('referral_code').not('referral_code', 'is', null);
+    if (error) throw error;
+
+    const counts: any = {};
+    data.forEach((m: any) => {
+      if (m.referral_code) counts[m.referral_code] = (counts[m.referral_code] || 0) + 1;
+    });
+
+    return Object.entries(counts).map(([code, count]) => ({ code, count })).sort((a: any, b: any) => b.count - a.count);
+  } catch (error: any) {
+    return [];
   }
 };

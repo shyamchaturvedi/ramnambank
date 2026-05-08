@@ -63,7 +63,7 @@ export default function Footer() {
             <div className="space-y-6 text-xs font-bold text-white/40 uppercase tracking-widest">
               <div className="flex items-start gap-4">
                  <MapPin size={18} className="text-saffron shrink-0" />
-                 <p className="leading-loose">श्री जगन्नाथ ओडियाबाबा सेवा संस्थान,<br /> अयोध्या धाम, उत्तर प्रदेश - 224123</p>
+                 <p className="leading-loose">श्री जगन्नाथ ओड़िआ बाबा सेवा संस्थान,<br /> अयोध्या धाम, उत्तर प्रदेश - 224123</p>
               </div>
               <div className="flex items-center gap-4">
                  <Phone size={18} className="text-saffron shrink-0" />
@@ -107,7 +107,7 @@ export default function Footer() {
 
            <div className="text-center md:text-right space-y-2">
               <p className="text-[8px] text-white/40 font-bold uppercase tracking-widest leading-relaxed max-w-md">
-                 डिस्क्लेमर: यह श्री जगन्नाथ ओडियाबाबा सेवा संस्थान की आधिकारिक वेबसाइट है। सभी आध्यात्मिक संचय भक्तों की श्रद्धा पर आधारित हैं।
+                 डिस्क्लेमर: यह श्री जगन्नाथ ओड़िआ बाबा सेवा संस्थान की आधिकारिक वेबसाइट है। सभी आध्यात्मिक संचय भक्तों की श्रद्धा पर आधारित हैं।
               </p>
            </div>
 

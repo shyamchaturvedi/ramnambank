@@ -10,26 +10,44 @@ import {
   ArrowRight, 
   ChevronLeft,
   Users,
-  Settings
+  Settings,
+  AlertCircle
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { createClient } from '@supabase/supabase-js';
 
 export default function CentralLogin() {
   const router = useRouter();
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
   const [role, setRole] = useState<'MEMBER' | 'ADMIN'>('MEMBER');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoggingIn(true);
-    // Simulate login based on role
-    setTimeout(() => {
-      if (role === 'ADMIN') {
-        router.push('/dashboard');
-      } else {
-        router.push('/dashboard');
-      }
-    }, 1500);
+    setError(null);
+
+    // If it's a numeric ID or member ID, we append the domain
+    const loginEmail = email.includes('@') ? email : `${email}@ramnam.bank`;
+
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password: password,
+    });
+
+    if (authError) {
+      setError('गलत आईडी या पासवर्ड। कृपया पुनः प्रयास करें।');
+      setIsLoggingIn(false);
+    } else {
+      router.push('/dashboard');
+      router.refresh();
+    }
   };
 
   return (
@@ -50,6 +68,14 @@ export default function CentralLogin() {
              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-saffron to-sacred-red mx-auto flex items-center justify-center text-3xl font-bold gold-text shadow-2xl">ॐ</div>
              <h1 className="text-3xl font-black font-serif gold-text uppercase tracking-widest mt-4">पोर्टल प्रवेश</h1>
              <p className="text-white/30 text-[10px] font-bold uppercase tracking-[0.3em]">अपनी भूमिका का चयन करें</p>
+             {error && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+                  className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-[10px] text-red-500 font-bold uppercase tracking-widest flex items-center gap-2"
+                >
+                   <AlertCircle size={14} /> {error}
+                </motion.div>
+             )}
           </div>
 
           {/* Role Selector */}
@@ -75,7 +101,9 @@ export default function CentralLogin() {
                    <input 
                      required
                      type="text" 
-                     placeholder={role === 'ADMIN' ? 'एडमिन ID' : 'मोबाइल नंबर / भक्त ID'} 
+                     value={email}
+                     onChange={(e) => setEmail(e.target.value)}
+                     placeholder={role === 'ADMIN' ? 'एडमिन ID / ईमेल' : 'मोबाइल नंबर / भक्त ID'} 
                      className="w-full pl-14 pr-6 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-saffron/50 text-white text-sm transition-all"
                    />
                 </div>
@@ -84,6 +112,8 @@ export default function CentralLogin() {
                    <input 
                      required
                      type="password" 
+                     value={password}
+                     onChange={(e) => setPassword(e.target.value)}
                      placeholder="पासवर्ड" 
                      className="w-full pl-14 pr-6 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-saffron/50 text-white text-sm transition-all"
                    />
@@ -96,7 +126,7 @@ export default function CentralLogin() {
                className="w-full saffron-btn py-5 flex items-center justify-center gap-3 text-[10px] group"
              >
                 {isLoggingIn ? (
-                  <span className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
+                   <span className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
                 ) : (
                   <>
                     लॉगिन करें 

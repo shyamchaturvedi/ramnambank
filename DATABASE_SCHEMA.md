@@ -101,7 +101,33 @@ FROM deposits;
 -- Refresh this view every hour or on specific triggers
 ```
 
-## 6. Security (Row Level Security - RLS)
+## 7. Membership Plans & Committees
+Tables to manage dynamic content like fees and team members.
+
+```sql
+CREATE TABLE membership_plans (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT NOT NULL,
+    organization TEXT NOT NULL,
+    amount TEXT NOT NULL,
+    description TEXT,
+    icon_name TEXT, -- Lucide icon identifier
+    sort_order INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE committee_members (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    branch_id UUID REFERENCES branches(id), -- Null for global committee
+    full_name TEXT NOT NULL,
+    post TEXT NOT NULL,
+    mobile_no TEXT,
+    category TEXT CHECK (category IN ('GOVERNING', 'EXECUTIVE', 'ADVISER')),
+    sort_order INT DEFAULT 0
+);
+```
+
+## 8. Security (Row Level Security - RLS)
 - **State Admins:** Can view all data within their state branches.
 - **Block Admins:** Can only register and view members in their specific block.
 - **Super Admin:** Full access to everything.

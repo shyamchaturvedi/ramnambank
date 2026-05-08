@@ -1,9 +1,8 @@
 {
-  "version": 2,
-  "framework": "nextjs",
-  "regions": ["bom1"],
-  "cleanUrls": true,
-  "github": {
-    "silent": true
-  }
+  "crons": [
+    {
+      "path": "/api/cron/keep-alive",
+      "schedule": "0 0 * * *"
+    }
+  ]
 }

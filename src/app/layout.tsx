@@ -102,7 +102,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="hi">
+    <html lang="hi" suppressHydrationWarning>
       <head>
         <Script
           id="schema-org"
