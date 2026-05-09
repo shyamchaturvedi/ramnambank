@@ -39,38 +39,48 @@ export default function CentralLogin() {
     try {
       console.log('Login process started for:', email);
       
-      // 1. First, search the 'members' table to get the REAL registered email
-      const { data: memberRecord, error: searchError } = await supabase
-        .from('members')
-        .select('email, role, full_name')
-        .or(`email.eq.${email},mobile_number.eq.${email},referral_code.eq.${email},membership_id.eq.${email}`)
-        .maybeSingle();
-
-      if (searchError) {
-        console.error('DB Search Error:', searchError);
+      // 1. Search the 'members' table for ANY match (Mobile, Email, or Membership ID)
+      // We do this by searching columns separately to avoid issues with special characters in '.or'
+      let memberRecord = null;
+      
+      // Try Membership ID
+      const { data: byId } = await supabase.from('members').select('email, role, full_name, membership_id').eq('membership_id', email).maybeSingle();
+      if (byId) memberRecord = byId;
+      
+      // Try Mobile
+      if (!memberRecord) {
+        const { data: byMobile } = await supabase.from('members').select('email, role, full_name, membership_id').eq('mobile_number', email).maybeSingle();
+        if (byMobile) memberRecord = byMobile;
       }
+      
+      // Try Email
+      if (!memberRecord && email.includes('@')) {
+        const { data: byEmail } = await supabase.from('members').select('email, role, full_name, membership_id').eq('email', email).maybeSingle();
+        if (byEmail) memberRecord = byEmail;
+      }
+
+      console.log('Member Record Result:', memberRecord ? 'Found' : 'Not Found');
 
       let targetEmail = email;
       if (memberRecord?.email) {
         targetEmail = memberRecord.email;
         console.log('Found registered email:', targetEmail);
       } else if (!email.includes('@')) {
-        // Fallback for old accounts without explicit email
         targetEmail = `${email}@ramnam.bank`;
       }
 
-      // 2. Attempt Login with the discovered email
+      // 2. Attempt Login
       const { data: authResult, error: authError } = await supabase.auth.signInWithPassword({
         email: targetEmail,
         password: password,
       });
 
       if (authError) {
-        console.log('Standard Auth Failed:', authError.message);
+        console.log('Auth Failed:', authError.message);
         
-        // 3. AUTO-SYNC/REPAIR: If record exists in DB but not in Auth, create it now
+        // 3. AUTO-SYNC: If user exists in DB but not in Auth, sync them
         if (memberRecord) {
-          console.log('Member exists in DB, syncing with Auth...');
+          console.log('Syncing DB member to Auth...');
           const { error: syncError } = await supabase.auth.signUp({
             email: targetEmail,
             password: password,
@@ -92,9 +102,9 @@ export default function CentralLogin() {
         }
         
         setError('गलत आईडी या पासवर्ड। कृपया पुनः प्रयास करें।');
-        alert('लॉगिन विफल: गलत आईडी या पासवर्ड।');
+        alert('लॉगिन विफल: ' + authError.message);
       } else {
-        console.log('Login successful!');
+        console.log('Login success!');
         router.push('/dashboard');
         router.refresh();
         return;
