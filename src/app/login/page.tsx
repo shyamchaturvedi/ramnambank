@@ -132,6 +132,19 @@ export default function CentralLogin() {
              <div className="w-16 h-16 rounded-2xl bg-saffron mx-auto flex items-center justify-center text-3xl font-bold text-black">ॐ</div>
              <h1 className="text-3xl font-black font-serif gold-text uppercase tracking-widest mt-4">पोर्टल प्रवेश</h1>
              <p className="text-[8px] text-white/10 uppercase tracking-[0.3em]">Build: {new Date().toLocaleTimeString()} (Robust Auth V3)</p>
+             
+             <button 
+               type="button"
+               onClick={async () => {
+                 const { data, error } = await supabase.from('members').select('id').limit(1);
+                 if (error) alert('कनेक्शन एरर: ' + error.message);
+                 else alert('कनेक्शन सफल! डेटाबेस से संपर्क हो पा रहा है।');
+               }}
+               className="mt-2 text-[8px] font-black text-saffron/40 hover:text-saffron uppercase tracking-widest border border-saffron/10 px-3 py-1 rounded-full transition-all"
+             >
+                कनेक्शन जांचें (Check Status)
+             </button>
+
              {error && (
                 <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-[10px] text-red-500 font-bold uppercase tracking-widest flex items-center gap-2">
                    <AlertCircle size={14} />
