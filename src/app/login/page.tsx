@@ -26,6 +26,7 @@ export default function CentralLogin() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Login attempt started for:', email);
     setIsLoggingIn(true);
     setError(null);
 
