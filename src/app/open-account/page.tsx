@@ -36,6 +36,7 @@ function RegistrationForm() {
     address: '',
     pin_code: '',
     password: '',
+    email: '',
     referral_code: ''
   });
 
@@ -129,6 +130,15 @@ function RegistrationForm() {
               <div className="relative group">
                 <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-saffron transition-colors" size={18} />
                 <input required type="tel" maxLength={10} value={form.mobile_number} onChange={e => setForm({...form, mobile_number: e.target.value})} placeholder="10 अंकों का नंबर" className="w-full pl-16 pr-6 py-5 bg-white/[0.03] border border-white/10 rounded-[2rem] outline-none focus:border-saffron/50 text-white text-sm transition-all shadow-inner" />
+              </div>
+            </div>
+
+            {/* Email ID */}
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-2">ईमेल आईडी (Email ID - Optional)</label>
+              <div className="relative group">
+                <User className="absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-saffron transition-colors" size={18} />
+                <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="email@example.com" className="w-full pl-16 pr-6 py-5 bg-white/[0.03] border border-white/10 rounded-[2rem] outline-none focus:border-saffron/50 text-white text-sm transition-all shadow-inner" />
               </div>
             </div>
 
