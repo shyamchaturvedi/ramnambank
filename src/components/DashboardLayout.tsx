@@ -202,6 +202,11 @@ export default function DashboardLayout({
                 e.stopPropagation(); 
                 setMobileMenuOpen(!isMobileMenuOpen); 
               }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setMobileMenuOpen(!isMobileMenuOpen);
+              }}
               className="p-4 bg-white/5 border border-white/10 rounded-xl text-saffron lg:hidden hover:bg-saffron/10 transition-all relative z-[100] flex items-center justify-center active:scale-95"
             >
               <Menu size={28} />
