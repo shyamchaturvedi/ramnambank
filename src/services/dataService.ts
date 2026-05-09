@@ -1,9 +1,23 @@
 import { supabase } from '@/lib/supabase';
 
 // Static Fallback Data (Client's Latest Data)
-export const DUMMY_BRANCHES = [];
+export const DUMMY_BRANCHES = [
+  { id: '1', name: 'अयोध्या मुख्यालय (Main)', city: 'Ayodhya', code: 'MAIN' },
+  { id: '2', name: 'Kendrapara मुख्य शाखा', city: 'Kendrapara', code: 'OD/17' },
+  { id: '3', name: 'Patamundai NAC', city: 'Kendrapara', code: 'OD/17/02' },
+  { id: '4', name: 'Ali Block', city: 'Kendrapara', code: 'OD/17/03' },
+  { id: '5', name: 'Derabish Block', city: 'Kendrapara', code: 'OD/17/04' },
+  { id: '6', name: 'Garadpur Block', city: 'Kendrapara', code: 'OD/17/05' },
+  { id: '7', name: 'Mahakalpada Block', city: 'Kendrapara', code: 'OD/17/07' },
+  { id: '8', name: 'Marshaghai Block', city: 'Kendrapara', code: 'OD/17/08' },
+  { id: '9', name: 'Rajnagar Block', city: 'Kendrapara', code: 'OD/17/10' }
+];
 
-export const DUMMY_MEMBERSHIP_PLANS = [];
+export const DUMMY_MEMBERSHIP_PLANS = [
+  { id: '1', name: 'साधारण सदस्य', price_hindi: 'निःशुल्क', price_value: 0, sort_order: 1 },
+  { id: '2', name: 'आजीवन सदस्य', price_hindi: '₹2100/-', price_value: 2100, sort_order: 2 },
+  { id: '3', name: 'विशेष आजीवन सदस्य', price_hindi: '₹21000/-', price_value: 21000, sort_order: 3 }
+];
 
 export const DUMMY_COMMITTEE = [];
 
