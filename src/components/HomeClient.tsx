@@ -23,6 +23,7 @@ import Footer from '@/components/Footer';
 import { getAdminStats } from '@/services/dataService';
 
 export default function HomeClient() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [stats, setStats] = React.useState<any>(null);
 
   React.useEffect(() => {
@@ -33,8 +34,41 @@ export default function HomeClient() {
     loadStats();
   }, []);
 
+  const navLinks = [
+    { name: 'हमारे बारे में', href: '/about' },
+    { name: 'हमारा संकल्प', href: '/mission' },
+    { name: 'वैश्विक प्रगति', href: '/progress' },
+    { name: 'समितियां', href: '/committee' },
+    { name: 'शाखाएं', href: '/branches' },
+    { name: 'लेखन विधि', href: '/write' },
+    { name: 'दान एवं सेवा', href: '/donate', color: 'text-sacred-red' },
+  ];
+
   return (
     <div className="min-h-screen bg-black text-white selection:bg-saffron selection:text-black">
+        {/* Mobile Menu Overlay */}
+        <div className={`fixed inset-0 bg-black/95 backdrop-blur-2xl z-[100] transition-all duration-500 lg:hidden ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+           <div className="p-8 h-full flex flex-col">
+              <div className="flex items-center justify-between mb-16">
+                 <div className="text-xl font-bold font-serif gold-text uppercase tracking-widest">मेनू</div>
+                 <button onClick={() => setIsMobileMenuOpen(false)} className="p-3 bg-white/5 rounded-2xl text-white/40">
+                    <ArrowRight size={24} className="rotate-180" />
+                 </button>
+              </div>
+              <div className="flex-1 space-y-8">
+                 {navLinks.map((link) => (
+                    <Link key={link.href} href={link.href} className={`block text-2xl font-black uppercase tracking-widest ${link.color || 'text-white'}`}>
+                       {link.name}
+                    </Link>
+                 ))}
+              </div>
+              <div className="space-y-6 pt-10 border-t border-white/10">
+                 <Link href="/login" className="block w-full py-5 rounded-2xl border border-white/10 text-center font-black uppercase tracking-widest text-xs">प्रवेश</Link>
+                 <Link href="/open-account" className="block w-full saffron-btn py-5 text-center">खाता खोलें</Link>
+              </div>
+           </div>
+        </div>
+
         {/* Premium Top Navigation */}
         <nav className="fixed top-0 w-full z-50 bg-black/60 backdrop-blur-3xl border-b border-white/5">
           <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
@@ -65,7 +99,7 @@ export default function HomeClient() {
                 <Link href="/open-account" className="saffron-btn">खाता खोलें</Link>
              </div>
 
-             <button className="lg:hidden text-white">
+             <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden text-white p-3 bg-white/5 rounded-xl border border-white/10">
                 <Menu size={28} />
              </button>
           </div>
