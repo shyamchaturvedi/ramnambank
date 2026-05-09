@@ -17,7 +17,8 @@ import {
   BookOpen,
   Award,
   Download,
-  Loader2
+  Loader2,
+  Share2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getAdminStats, getMemberBookletHistory } from '@/services/dataService';
@@ -223,9 +224,35 @@ export default function Dashboard() {
               </div>
            </div>
 
-           {/* Certificates Side Panel */}
+           {/* Share & Invite Section (New for Devotees) */}
            <div className="space-y-6">
               <h3 className="text-xs font-black uppercase tracking-[0.2em] text-saffron flex items-center gap-2">
+                <Share2 size={16} /> प्रचार एवं सेवा
+              </h3>
+              <div className="premium-card p-8 bg-saffron/5 border-saffron/20 space-y-6">
+                 <div className="space-y-2 text-center">
+                    <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">आपका रेफरल कोड</p>
+                    <div className="text-2xl font-black text-white tracking-[0.3em] font-mono">{mockMemberId.replace(/\//g, '')}</div>
+                 </div>
+                 
+                 <div className="pt-4 border-t border-white/5">
+                    <p className="text-[10px] text-white/40 uppercase leading-relaxed text-center mb-6">
+                       इस लिंक को साझा कर नए भक्तों को राम नाम बैंक से जोड़ें
+                    </p>
+                    <button 
+                       onClick={() => {
+                          const link = `${window.location.origin}/open-account?ref=${mockMemberId.replace(/\//g, '')}`;
+                          navigator.clipboard.writeText(link);
+                          alert('रेफरल लिंक कॉपी हो गया!');
+                       }}
+                       className="w-full saffron-btn py-4 flex items-center justify-center gap-3 text-[10px] font-black uppercase"
+                    >
+                       <Share2 size={16} /> लिंक कॉपी करें
+                    </button>
+                 </div>
+              </div>
+
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-saffron flex items-center gap-2 mt-10">
                 <Award size={16} /> मेरे प्रमाण पत्र
               </h3>
               <div className="space-y-4">
