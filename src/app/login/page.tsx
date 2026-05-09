@@ -43,8 +43,9 @@ export default function CentralLogin() {
       const { data: memberData } = await supabase
         .from('members')
         .select('*')
-        .or(`email.eq.${loginEmail},mobile_number.eq.${email}`)
+        .or(`email.eq.${loginEmail},mobile_number.eq.${email},referral_code.eq.${loginEmail}`)
         .eq('password', password)
+        .limit(1)
         .single();
 
       if (memberData) {

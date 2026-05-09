@@ -13,6 +13,13 @@ BEGIN
 END $$;
 
 -- 2. Create/Update Admin User in Members table
+-- This will fix any row where the email was accidentally put in the referral_code
+UPDATE members 
+SET role = 'ADMIN', 
+    email = 'iammshyam@gmail.com', 
+    status = 'ACTIVE' 
+WHERE email = 'iammshyam@gmail.com' OR referral_code = 'iammshyam@gmail.com' OR mobile_number = '9598023701';
+
 INSERT INTO members (
     full_name, 
     mobile_number, 
