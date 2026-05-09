@@ -35,11 +35,27 @@ export const createMember = async (memberData: any) => {
 
     const membershipId = generateMemberId(memberData.branch_code, nextSerial);
     
-    const { data, error } = await supabase.from('members').insert([{
-      ...memberData,
+    // Explicitly select only allowed columns to prevent schema errors
+    const insertData = {
+      full_name: memberData.full_name,
+      mobile_number: memberData.mobile_number,
+      password: memberData.password,
+      address: memberData.address,
+      pin_code: memberData.pin_code,
+      referral_code: memberData.referral_code,
+      state: memberData.state || 'Odisha',
+      district: memberData.district,
+      block: memberData.block,
+      branch_code: memberData.branch_code,
       membership_id: membershipId,
-      status: 'ACTIVE'
-    }]).select();
+      status: 'ACTIVE',
+      role: 'DEVOTEE'
+    };
+
+    const { data, error } = await supabase
+      .from('members')
+      .insert([insertData])
+      .select();
 
     if (error) throw error;
     return { success: true, data };
