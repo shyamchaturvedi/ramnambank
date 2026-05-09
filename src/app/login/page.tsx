@@ -94,6 +94,7 @@ export default function CentralLogin() {
             });
             
             if (!retryError) {
+              alert('लॉगिन सफल! डैशबोर्ड पर जा रहे हैं...');
               router.push('/dashboard');
               router.refresh();
               return;
@@ -105,8 +106,9 @@ export default function CentralLogin() {
         alert('लॉगिन विफल: ' + authError.message);
       } else {
         console.log('Login success!');
+        alert('लॉगिन सफल! डैशबोर्ड पर जा रहे हैं...');
         router.push('/dashboard');
-        router.refresh();
+        setTimeout(() => router.refresh(), 500);
         return;
       }
     } catch (err: any) {
