@@ -24,7 +24,9 @@ import { motion } from 'framer-motion';
 import { getAdminStats, getMemberBookletHistory } from '@/services/dataService';
 
 export default function Dashboard() {
-  const [userRole, setUserRole] = useState<'ADMIN' | 'DEVOTEE'>('ADMIN'); // Default to ADMIN for now
+  const router = useRouter();
+  const [userRole, setUserRole] = useState<'ADMIN' | 'DEVOTEE' | 'BRANCH_MANAGER' | 'VOLUNTEER'>('DEVOTEE');
+  const [memberId, setMemberId] = useState<string>('');
   const [stats, setStats] = useState({
     totalBhakt: 0,
     totalBranches: 0,
@@ -36,12 +38,35 @@ export default function Dashboard() {
   const [history, setHistory] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // For testing, let's assume a member ID if it's a devotee
-  const mockMemberId = 'OD/17/0001'; 
-
   useEffect(() => {
-    const loadData = async () => {
-      if (userRole === 'ADMIN') {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        router.push('/login');
+        return;
+      }
+
+      // Get role from user metadata
+      const role = session.user.user_metadata?.role || 'DEVOTEE';
+      setUserRole(role);
+
+      // If it's a devotee, find their membership_id from 'members' table
+      if (role === 'DEVOTEE' || role === 'MEMBER') {
+        const { data: member } = await supabase
+          .from('members')
+          .select('membership_id')
+          .eq('email', session.user.email)
+          .maybeSingle();
+        
+        if (member) setMemberId(member.membership_id);
+      }
+
+      loadData(role, session.user.email);
+    };
+
+    const loadData = async (role: string, email: string | undefined) => {
+      if (role === 'ADMIN') {
         const realStats = await getAdminStats();
         if (realStats) {
           setStats(prev => ({
@@ -53,13 +78,23 @@ export default function Dashboard() {
           }));
         }
       } else {
-        const historyData = await getMemberBookletHistory(mockMemberId);
-        setHistory(historyData);
+        // Fetch history for the logged in member
+        const { data: member } = await supabase
+          .from('members')
+          .select('membership_id')
+          .eq('email', email)
+          .maybeSingle();
+          
+        if (member) {
+          const historyData = await getMemberBookletHistory(member.membership_id);
+          setHistory(historyData);
+        }
       }
       setIsLoading(false);
     };
-    loadData();
-  }, [userRole]);
+
+    checkUser();
+  }, [router]);
 
   const statCards = [
     { title: 'कुल भक्त', value: stats.totalBhakt, icon: Users, trend: '+12%', color: 'from-orange-500/20 to-transparent' },
@@ -180,7 +215,7 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <h2 className="text-4xl font-black font-serif uppercase text-white gold-text">मेरा आध्यात्मिक खाता</h2>
-            <p className="text-white/40 text-[10px] uppercase font-black tracking-[0.2em]">भक्त ID: {mockMemberId}</p>
+            <p className="text-white/40 text-[10px] uppercase font-black tracking-[0.2em]">भक्त ID: {memberId}</p>
           </div>
         </div>
 
@@ -232,7 +267,7 @@ export default function Dashboard() {
               <div className="premium-card p-8 bg-saffron/5 border-saffron/20 space-y-6">
                  <div className="space-y-2 text-center">
                     <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">आपका रेफरल कोड</p>
-                    <div className="text-2xl font-black text-white tracking-[0.3em] font-mono">{mockMemberId.replace(/\//g, '')}</div>
+                    <div className="text-2xl font-black text-white tracking-[0.3em] font-mono">{memberId.replace(/\//g, '')}</div>
                  </div>
                  
                  <div className="pt-4 border-t border-white/5">
@@ -241,7 +276,7 @@ export default function Dashboard() {
                     </p>
                     <button 
                        onClick={() => {
-                          const link = `${window.location.origin}/open-account?ref=${mockMemberId.replace(/\//g, '')}`;
+                          const link = `${window.location.origin}/open-account?ref=${memberId.replace(/\//g, '')}`;
                           navigator.clipboard.writeText(link);
                           alert('रेफरल लिंक कॉपी हो गया!');
                        }}
