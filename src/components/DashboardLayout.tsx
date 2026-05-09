@@ -54,6 +54,11 @@ export default function DashboardLayout({
     };
 
     const detectDevTools = () => {
+      // Disable this check for mobile devices to avoid false positives
+      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        return;
+      }
+
       const threshold = 160;
       if (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold) {
         // DevTools likely open
@@ -127,13 +132,11 @@ export default function DashboardLayout({
 
       {/* Sidebar */}
       <motion.aside 
-        initial={false}
         animate={{ 
-          x: isMobileMenuOpen ? 0 : (typeof window !== 'undefined' && window.innerWidth < 1024 ? -300 : 0),
-          opacity: 1 
+          x: isMobileMenuOpen ? 0 : '-100%',
         }}
-        transition={{ duration: 0.4, type: 'spring', damping: 25 }}
-        className={`fixed left-0 top-0 h-screen bg-[#0A0A0A] border-r border-white/5 z-[100] lg:z-[70] w-72 lg:translate-x-0 transition-shadow ${isMobileMenuOpen ? 'shadow-[0_0_50px_rgba(0,0,0,0.8)]' : ''}`}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        className={`fixed left-0 top-0 h-screen bg-[#0A0A0A] border-r border-white/5 z-[100] lg:relative lg:translate-x-0 w-72 transition-shadow ${isMobileMenuOpen ? 'shadow-[0_0_50px_rgba(0,0,0,0.8)]' : ''}`}
       >
         <div className="p-8 h-full flex flex-col relative">
           {/* Close button for mobile */}
@@ -194,8 +197,12 @@ export default function DashboardLayout({
         <header className="h-24 glass-nav flex items-center justify-between px-8 shrink-0 relative z-50">
           <div className="flex items-center gap-4">
             <button 
-              onClick={(e) => { e.stopPropagation(); setMobileMenuOpen(true); }} 
-              className="p-3 bg-white/5 border border-white/10 rounded-xl text-saffron lg:hidden hover:bg-saffron/10 transition-all relative z-[50]"
+              onClick={(e) => { 
+                e.preventDefault();
+                e.stopPropagation(); 
+                setMobileMenuOpen(!isMobileMenuOpen); 
+              }} 
+              className="p-3 bg-white/5 border border-white/10 rounded-xl text-saffron lg:hidden hover:bg-saffron/10 transition-all relative z-[70] flex items-center justify-center"
             >
               <Menu size={24} />
             </button>
