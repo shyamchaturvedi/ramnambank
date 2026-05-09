@@ -37,52 +37,60 @@ export default function CentralLogin() {
     setError(null);
 
     try {
-      // SMART IDENTIFIER: email, phone, or ID
-      const loginEmail = email.includes('@') ? email : `${email}@ramnam.bank`;
+      console.log('Login process started for:', email);
+      
+      // 1. First, search the 'members' table to get the REAL registered email
+      const { data: memberRecord, error: searchError } = await supabase
+        .from('members')
+        .select('email, role, full_name')
+        .or(`email.eq.${email},mobile_number.eq.${email},referral_code.eq.${email},membership_id.eq.${email}`)
+        .maybeSingle();
 
-      // 1. Standard Login attempt
+      if (searchError) {
+        console.error('DB Search Error:', searchError);
+      }
+
+      let targetEmail = email;
+      if (memberRecord?.email) {
+        targetEmail = memberRecord.email;
+        console.log('Found registered email:', targetEmail);
+      } else if (!email.includes('@')) {
+        // Fallback for old accounts without explicit email
+        targetEmail = `${email}@ramnam.bank`;
+      }
+
+      // 2. Attempt Login with the discovered email
       const { data: authResult, error: authError } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
+        email: targetEmail,
         password: password,
       });
 
       if (authError) {
-        console.log('Auth Error, trying Deep Search...', authError.message);
+        console.log('Standard Auth Failed:', authError.message);
         
-        // 2. DEEP SEARCH: If standard login fails, search all possible fields in 'members'
-        const { data: memberRecord, error: dbError } = await supabase
-          .from('members')
-          .select('*')
-          .or(`email.eq.${loginEmail},mobile_number.eq.${email},referral_code.eq.${email},membership_id.eq.${email}`)
-          .eq('password', password)
-          .maybeSingle();
-
-        if (dbError) {
-          alert('डेटाबेस एरर: ' + dbError.message);
-        }
-
+        // 3. AUTO-SYNC/REPAIR: If record exists in DB but not in Auth, create it now
         if (memberRecord) {
-          console.log('Found member record, attempting auto-repair...');
-          const finalEmail = memberRecord.email || loginEmail;
-          const { error: repairError } = await supabase.auth.signUp({
-            email: finalEmail,
+          console.log('Member exists in DB, syncing with Auth...');
+          const { error: syncError } = await supabase.auth.signUp({
+            email: targetEmail,
             password: password,
             options: { data: { role: memberRecord.role || 'MEMBER', full_name: memberRecord.full_name } }
           });
 
-          if (!repairError || repairError.message.includes('already registered')) {
-            const { error: finalAuthError } = await supabase.auth.signInWithPassword({ email: finalEmail, password: password });
-            if (finalAuthError) {
-               alert('सिंक के बाद लॉगिन विफल: ' + finalAuthError.message);
-            } else {
-               router.push('/dashboard');
-               router.refresh();
-               return;
+          if (!syncError || syncError.message.includes('already registered')) {
+            const { error: retryError } = await supabase.auth.signInWithPassword({
+              email: targetEmail,
+              password: password
+            });
+            
+            if (!retryError) {
+              router.push('/dashboard');
+              router.refresh();
+              return;
             }
-          } else {
-            alert('ऑटो-रिपेयर एरर: ' + repairError.message);
           }
         }
+        
         setError('गलत आईडी या पासवर्ड। कृपया पुनः प्रयास करें।');
         alert('लॉगिन विफल: गलत आईडी या पासवर्ड।');
       } else {
