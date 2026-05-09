@@ -25,7 +25,13 @@ export default function CentralLogin() {
   const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
+    
+    if (!email || !password) {
+      alert('कृपया आईडी और पासवर्ड दोनों भरें!');
+      return;
+    }
+
     console.log('Login attempt started for:', email);
     setIsLoggingIn(true);
     setError(null);
@@ -41,16 +47,22 @@ export default function CentralLogin() {
       });
 
       if (authError) {
+        console.log('Auth Error, trying Deep Search...', authError.message);
+        
         // 2. DEEP SEARCH: If standard login fails, search all possible fields in 'members'
-        const { data: memberRecord } = await supabase
+        const { data: memberRecord, error: dbError } = await supabase
           .from('members')
           .select('*')
           .or(`email.eq.${loginEmail},mobile_number.eq.${email},referral_code.eq.${email},membership_id.eq.${email}`)
           .eq('password', password)
           .maybeSingle();
 
+        if (dbError) {
+          alert('डेटाबेस एरर: ' + dbError.message);
+        }
+
         if (memberRecord) {
-          // 3. AUTO-REPAIR: Found in DB but not in Auth. Fix it now.
+          console.log('Found member record, attempting auto-repair...');
           const finalEmail = memberRecord.email || loginEmail;
           const { error: repairError } = await supabase.auth.signUp({
             email: finalEmail,
@@ -59,14 +71,22 @@ export default function CentralLogin() {
           });
 
           if (!repairError || repairError.message.includes('already registered')) {
-            await supabase.auth.signInWithPassword({ email: finalEmail, password: password });
-            router.push('/dashboard');
-            router.refresh();
-            return;
+            const { error: finalAuthError } = await supabase.auth.signInWithPassword({ email: finalEmail, password: password });
+            if (finalAuthError) {
+               alert('सिंक के बाद लॉगिन विफल: ' + finalAuthError.message);
+            } else {
+               router.push('/dashboard');
+               router.refresh();
+               return;
+            }
+          } else {
+            alert('ऑटो-रिपेयर एरर: ' + repairError.message);
           }
         }
         setError('गलत आईडी या पासवर्ड। कृपया पुनः प्रयास करें।');
+        alert('लॉगिन विफल: गलत आईडी या पासवर्ड।');
       } else {
+        console.log('Login successful!');
         router.push('/dashboard');
         router.refresh();
         return;
@@ -74,6 +94,7 @@ export default function CentralLogin() {
     } catch (err: any) {
       console.error('System Login Error:', err);
       setError('सर्वर की समस्या। कृपया इंटरनेट चेक करें।');
+      alert('सिस्टम एरर: ' + (err.message || 'Unknown error'));
     } finally {
       setIsLoggingIn(false);
     }
