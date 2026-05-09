@@ -14,14 +14,10 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
 export default function CentralLogin() {
   const router = useRouter();
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
   const [role, setRole] = useState<'MEMBER' | 'ADMIN'>('MEMBER');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [email, setEmail] = useState('');

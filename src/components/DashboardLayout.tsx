@@ -26,8 +26,7 @@ import {
   Building2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 export default function DashboardLayout({
@@ -38,10 +37,6 @@ export default function DashboardLayout({
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
 
   // 1. Anti-Debug Security
   useEffect(() => {
