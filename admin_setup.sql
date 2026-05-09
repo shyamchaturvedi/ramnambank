@@ -7,12 +7,16 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='members' AND column_name='role') THEN
         ALTER TABLE members ADD COLUMN role TEXT DEFAULT 'DEVOTEE';
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='members' AND column_name='email') THEN
+        ALTER TABLE members ADD COLUMN email TEXT;
+    END IF;
 END $$;
 
 -- 2. Create/Update Admin User in Members table
 INSERT INTO members (
     full_name, 
     mobile_number, 
+    email,
     address, 
     role, 
     status, 
@@ -20,11 +24,12 @@ INSERT INTO members (
 ) VALUES (
     'Super Admin', 
     '9598023701', 
+    'iammshyam@gmail.com',
     'Ayodhya Dham', 
     'ADMIN', 
     'ACTIVE', 
     'ADMIN/2024/0001'
-) ON CONFLICT (mobile_number) DO UPDATE SET role = 'ADMIN', status = 'ACTIVE';
+) ON CONFLICT (mobile_number) DO UPDATE SET role = 'ADMIN', status = 'ACTIVE', email = 'iammshyam@gmail.com';
 
 -- 3. Instruction for Auth:
 -- Please go to Supabase Dashboard > Authentication > Users
