@@ -27,6 +27,7 @@ function RegistrationForm() {
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [selectedBlock, setSelectedBlock] = useState<any>(null);
   const [submitStatus, setSubmitStatus] = useState<'IDLE' | 'SUCCESS' | 'ERROR'>('IDLE');
+  const [error, setError] = useState<string | null>(null);
 
   // Form Fields
   const [form, setForm] = useState({
@@ -82,6 +83,7 @@ function RegistrationForm() {
       setTimeout(() => router.push('/dashboard'), 3000);
     } else {
       setSubmitStatus('ERROR');
+      setError(result.error);
     }
   };
 
@@ -200,7 +202,7 @@ function RegistrationForm() {
 
         {submitStatus === 'ERROR' && (
           <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-500 text-[10px] font-black uppercase tracking-widest">
-            <AlertCircle size={16} /> कुछ गलत हुआ। कृपया दोबारा प्रयास करें।
+            <AlertCircle size={16} /> {error || 'कुछ गलत हुआ। कृपया दोबारा प्रयास करें।'}
           </div>
         )}
       </form>

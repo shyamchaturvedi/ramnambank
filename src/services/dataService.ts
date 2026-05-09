@@ -19,7 +19,18 @@ export const generateMemberId = (branchCode: string, serialNumber: number) => {
 // 1. Create Member
 export const createMember = async (memberData: any) => {
   try {
-    // 1. Create Auth User first
+    // A. Check if mobile number already exists to give clear error
+    const { data: existing } = await supabase
+      .from('members')
+      .select('id')
+      .eq('mobile_number', memberData.mobile_number)
+      .maybeSingle();
+
+    if (existing) {
+      return { success: false, error: 'यह मोबाइल नंबर पहले से पंजीकृत है।' };
+    }
+
+    // B. Create Auth User
     const loginEmail = memberData.email || `${memberData.mobile_number}@ramnam.bank`;
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: loginEmail,
@@ -32,9 +43,15 @@ export const createMember = async (memberData: any) => {
       }
     });
 
-    if (authError) throw authError;
+    if (authError) {
+      if (authError.message.includes('already registered')) {
+        // Continue if auth exists but member record missing
+      } else {
+        throw authError;
+      }
+    }
 
-    // 2. Get last serial number for this branch/year
+    // C. Generate ID
     const { data: lastMember } = await supabase
       .from('members')
       .select('membership_id')
@@ -50,11 +67,11 @@ export const createMember = async (memberData: any) => {
 
     const membershipId = generateMemberId(memberData.branch_code, nextSerial);
     
-    // 3. Insert into members table
+    // D. Final Database Insert
     const insertData = {
       full_name: memberData.full_name,
       mobile_number: memberData.mobile_number,
-      password: memberData.password, // Stored for legacy reference
+      password: memberData.password,
       address: memberData.address,
       pin_code: memberData.pin_code,
       referral_code: memberData.referral_code,
@@ -68,16 +85,16 @@ export const createMember = async (memberData: any) => {
       email: loginEmail
     };
 
-    const { data, error } = await supabase
+    const { data, error: insertError } = await supabase
       .from('members')
       .insert([insertData])
       .select();
 
-    if (error) throw error;
-    return { success: true, data };
+    if (insertError) throw insertError;
+    return { success: true, data: data[0] };
   } catch (error: any) {
-    console.error('Error creating member:', error);
-    return { success: false, error: error.message };
+    console.error('Registration Error:', error);
+    return { success: false, error: error.message || 'पंजीकरण में त्रुटि आई।' };
   }
 };
 
