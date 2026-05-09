@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
 // This secret should match your VERCEL_CRON_SECRET env var to prevent unauthorized calls
 export async function GET(request: Request) {
@@ -11,11 +11,6 @@ export async function GET(request: Request) {
       return new Response('Unauthorized', { status: 401 });
     }
   }
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
 
   try {
     // Perform a small update operation to keep the DB active
