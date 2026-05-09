@@ -32,52 +32,62 @@ export default function CentralLogin() {
     // If it's a numeric ID or member ID, we append the domain
     const loginEmail = email.includes('@') ? email : `${email}@ramnam.bank`;
 
-    // 1. Try standard Supabase Auth
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email: loginEmail,
-      password: password,
-    });
+    try {
+      // 1. Try standard Supabase Auth
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: password,
+      });
 
-    if (authError) {
-      // 2. Auto-Sync Logic: If auth fails, check if user exists in 'members' table
-      const { data: memberData } = await supabase
-        .from('members')
-        .select('*')
-        .or(`email.eq.${loginEmail},mobile_number.eq.${email},referral_code.eq.${loginEmail}`)
-        .eq('password', password)
-        .limit(1)
-        .single();
+      if (authError) {
+        // 2. Auto-Sync Logic: If auth fails, check if user exists in 'members' table
+        const { data: memberData, error: dbError } = await supabase
+          .from('members')
+          .select('*')
+          .or(`email.eq.${loginEmail},mobile_number.eq.${email},referral_code.eq.${loginEmail}`)
+          .eq('password', password)
+          .limit(1)
+          .maybeSingle();
 
-      if (memberData) {
-        // User exists in DB but not in Auth. Let's auto-register them!
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: loginEmail,
-          password: password,
-          options: {
-            data: {
-              full_name: memberData.full_name,
-              role: memberData.role || 'MEMBER'
-            }
-          }
-        });
-
-        if (!signUpError) {
-          // Success! Now login again
-          await supabase.auth.signInWithPassword({
+        if (memberData) {
+          // User exists in DB but not in Auth. Let's auto-register them!
+          const { error: signUpError } = await supabase.auth.signUp({
             email: loginEmail,
             password: password,
+            options: {
+              data: {
+                full_name: memberData.full_name,
+                role: memberData.role || 'MEMBER'
+              }
+            }
           });
-          router.push('/dashboard');
-          router.refresh();
-          return;
-        }
-      }
 
-      setError('गलत आईडी या पासवर्ड। कृपया पुनः प्रयास करें।');
+          if (!signUpError) {
+            // Success! Now login again
+            const { error: finalError } = await supabase.auth.signInWithPassword({
+              email: loginEmail,
+              password: password,
+            });
+            
+            if (!finalError) {
+              router.push('/dashboard');
+              router.refresh();
+              return;
+            }
+          }
+        }
+
+        setError('गलत आईडी या पासवर्ड। कृपया पुनः प्रयास करें।');
+      } else {
+        router.push('/dashboard');
+        router.refresh();
+        return;
+      }
+    } catch (err: any) {
+      console.error('Login Error:', err);
+      setError('सर्वर एरर। कृपया इंटरनेट चेक करें।');
+    } finally {
       setIsLoggingIn(false);
-    } else {
-      router.push('/dashboard');
-      router.refresh();
     }
   };
 
