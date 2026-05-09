@@ -131,8 +131,10 @@ export default function CentralLogin() {
           <div className="text-center space-y-4">
              <div className="w-16 h-16 rounded-2xl bg-saffron mx-auto flex items-center justify-center text-3xl font-bold text-black">ॐ</div>
              <h1 className="text-3xl font-black font-serif gold-text uppercase tracking-widest mt-4">पोर्टल प्रवेश</h1>
+             <p className="text-[8px] text-white/10 uppercase tracking-[0.3em]">Build: {new Date().toLocaleTimeString()} (Robust Auth V3)</p>
              {error && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-[10px] text-red-500 font-bold uppercase tracking-widest">
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-[10px] text-red-500 font-bold uppercase tracking-widest flex items-center gap-2">
+                   <AlertCircle size={14} />
                    {error}
                 </div>
              )}
