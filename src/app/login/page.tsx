@@ -150,13 +150,13 @@ export default function CentralLogin() {
              </div>
 
              <button 
-               type="submit"
+               type="button"
                disabled={isLoggingIn}
                onClick={(e) => {
-                 console.log('Button clicked directly');
-                 // Standard submit will handle it, but this confirms the click
+                 e.preventDefault();
+                 handleLogin(e as any);
                }}
-               className="w-full saffron-btn py-5 flex items-center justify-center gap-3 text-[10px] group"
+               className="w-full saffron-btn py-5 flex items-center justify-center gap-3 text-[10px] group relative z-[200] cursor-pointer"
              >
                 {isLoggingIn ? (
                    <span className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
