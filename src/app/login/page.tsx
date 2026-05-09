@@ -94,27 +94,25 @@ export default function CentralLogin() {
             });
             
             if (!retryError) {
-              alert('लॉगिन सफल! डैशबोर्ड पर जा रहे हैं...');
-              router.push('/dashboard');
-              router.refresh();
+              console.log('Retry success, hard redirecting...');
+              window.location.href = '/dashboard';
               return;
             }
           }
         }
         
         setError('गलत आईडी या पासवर्ड। कृपया पुनः प्रयास करें।');
-        alert('लॉगिन विफल: ' + authError.message);
       } else {
-        console.log('Login success!');
-        alert('लॉगिन सफल! डैशबोर्ड पर जा रहे हैं...');
-        router.push('/dashboard');
-        setTimeout(() => router.refresh(), 500);
+        console.log('Login success! Hard redirecting...');
+        setError('सफलता! डैशबोर्ड पर जा रहे हैं...'); // Show success on UI
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1000);
         return;
       }
     } catch (err: any) {
       console.error('System Login Error:', err);
       setError('सर्वर की समस्या। कृपया इंटरनेट चेक करें।');
-      alert('सिस्टम एरर: ' + (err.message || 'Unknown error'));
     } finally {
       setIsLoggingIn(false);
     }
@@ -146,7 +144,7 @@ export default function CentralLogin() {
              </button>
 
              {error && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-[10px] text-red-500 font-bold uppercase tracking-widest flex items-center gap-2">
+                <div className={`p-3 border rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 ${error.startsWith('सफलता') ? 'bg-green-500/10 border-green-500/20 text-green-500' : 'bg-red-500/10 border-red-500/20 text-red-500'}`}>
                    <AlertCircle size={14} />
                    {error}
                 </div>
