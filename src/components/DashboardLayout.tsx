@@ -133,10 +133,10 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <motion.aside 
         animate={{ 
-          x: isMobileMenuOpen ? 0 : '-100%',
+          x: isMobileMenuOpen ? 0 : (typeof window !== 'undefined' && window.innerWidth >= 1024 ? 0 : '-100%'),
         }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className={`fixed left-0 top-0 h-screen bg-[#0A0A0A] border-r border-white/5 z-[100] lg:relative lg:translate-x-0 w-72 transition-shadow ${isMobileMenuOpen ? 'shadow-[0_0_50px_rgba(0,0,0,0.8)]' : ''}`}
+        className={`fixed left-0 top-0 h-screen bg-[#0A0A0A] border-r border-white/5 z-[100] w-72 transition-shadow ${isMobileMenuOpen ? 'shadow-[0_0_50px_rgba(0,0,0,0.8)]' : ''}`}
       >
         <div className="p-8 h-full flex flex-col relative">
           {/* Close button for mobile */}
@@ -194,17 +194,21 @@ export default function DashboardLayout({
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-saffron/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
         
         {/* Top Navigation Bar */}
-        <header className="h-24 glass-nav flex items-center justify-between px-8 shrink-0 relative z-50">
+        <header className="h-24 glass-nav flex items-center justify-between px-8 shrink-0 relative z-[90]">
           <div className="flex items-center gap-4">
             <button 
               onClick={(e) => { 
                 e.preventDefault();
                 e.stopPropagation(); 
                 setMobileMenuOpen(!isMobileMenuOpen); 
-              }} 
-              className="p-3 bg-white/5 border border-white/10 rounded-xl text-saffron lg:hidden hover:bg-saffron/10 transition-all relative z-[70] flex items-center justify-center"
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+                setMobileMenuOpen(!isMobileMenuOpen);
+              }}
+              className="p-4 bg-white/5 border border-white/10 rounded-xl text-saffron lg:hidden hover:bg-saffron/10 transition-all relative z-[100] flex items-center justify-center active:scale-95"
             >
-              <Menu size={24} />
+              <Menu size={28} />
             </button>
             <div className="relative hidden md:block">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
