@@ -19,7 +19,22 @@ export const generateMemberId = (branchCode: string, serialNumber: number) => {
 // 1. Create Member
 export const createMember = async (memberData: any) => {
   try {
-    // Get last serial number for this branch/year
+    // 1. Create Auth User first
+    const loginEmail = memberData.email || `${memberData.mobile_number}@ramnam.bank`;
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: loginEmail,
+      password: memberData.password,
+      options: {
+        data: {
+          full_name: memberData.full_name,
+          role: 'MEMBER'
+        }
+      }
+    });
+
+    if (authError) throw authError;
+
+    // 2. Get last serial number for this branch/year
     const { data: lastMember } = await supabase
       .from('members')
       .select('membership_id')
@@ -35,11 +50,11 @@ export const createMember = async (memberData: any) => {
 
     const membershipId = generateMemberId(memberData.branch_code, nextSerial);
     
-    // Explicitly select only allowed columns to prevent schema errors
+    // 3. Insert into members table
     const insertData = {
       full_name: memberData.full_name,
       mobile_number: memberData.mobile_number,
-      password: memberData.password,
+      password: memberData.password, // Stored for legacy reference
       address: memberData.address,
       pin_code: memberData.pin_code,
       referral_code: memberData.referral_code,
@@ -49,7 +64,8 @@ export const createMember = async (memberData: any) => {
       branch_code: memberData.branch_code,
       membership_id: membershipId,
       status: 'ACTIVE',
-      role: 'DEVOTEE'
+      role: 'DEVOTEE',
+      email: loginEmail
     };
 
     const { data, error } = await supabase
