@@ -23,7 +23,8 @@ import {
   FileSearch,
   IndianRupee,
   Upload,
-  Building2
+  Building2,
+  Share2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
