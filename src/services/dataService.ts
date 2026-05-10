@@ -326,7 +326,7 @@ export const getRecentActivities = async () => {
     submissions?.forEach(d => {
       activities.push({
         type: 'STOCK',
-        text: `पुस्तिका जमा: ${d.members?.full_name || '...'} (${d.quantity} नाम)`,
+        text: `पुस्तिका जमा: ${(d.members as any)?.full_name || '...'} (${d.quantity} नाम)`,
         time: d.created_at,
         icon: 'Box',
         color: 'text-green-400'
