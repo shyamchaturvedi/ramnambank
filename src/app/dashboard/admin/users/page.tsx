@@ -12,10 +12,13 @@ import {
   Filter,
   CheckCircle,
   XCircle,
-  ArrowUpRight
+  ArrowUpRight,
+  Trash2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getUsers, getBranches, updateUser } from '@/services/dataService';
+import { useRole } from '@/components/RoleContext';
+import { supabase } from '@/lib/supabase';
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -23,7 +26,9 @@ export default function UserManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const { role: currentUserRole } = useRole();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchUsersAndBranches = async () => {
     setIsLoading(true);
@@ -57,6 +62,22 @@ export default function UserManagementPage() {
       alert('त्रुटि: ' + res.error);
     }
     setIsUpdating(false);
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    if (!window.confirm('क्या आप निश्चित रूप से इस यूजर को हटाना चाहते हैं?')) return;
+    
+    setIsDeleting(true);
+    // In a real app, you would call a deleteUser service
+    const { error } = await supabase.from('members').delete().eq('id', id);
+    
+    if (!error) {
+      alert('यूजर सफलतापूर्वक हटा दिया गया।');
+      fetchUsersAndBranches();
+    } else {
+      alert('हटाने में त्रुटि: ' + error.message);
+    }
+    setIsDeleting(false);
   };
 
   const getRoleBadge = (role: string) => {
@@ -172,15 +193,23 @@ export default function UserManagementPage() {
                                     setSelectedUser({...user});
                                     setIsEditModalOpen(true);
                                   }}
-                                  className="p-2 rounded-lg bg-white/5 text-white/40 hover:text-saffron hover:bg-saffron/10 transition-all" title="भूमिका बदलें"
+                                  className="p-2 rounded-lg bg-white/5 text-white/40 hover:text-saffron hover:bg-saffron/10 transition-all" title="भूमिका/शाखा बदलें"
                                 >
                                    <ShieldCheck size={16} />
                                 </button>
+                                
+                                {currentUserRole === 'ADMIN' && (
+                                  <button 
+                                    onClick={() => handleDeleteUser(user.id)}
+                                    disabled={isDeleting}
+                                    className="p-2 rounded-lg bg-white/5 text-white/40 hover:text-red-500 hover:bg-red-500/10 transition-all" title="यूजर हटाएं"
+                                  >
+                                     <Trash2 size={16} />
+                                  </button>
+                                )}
+
                                 <button className={`p-2 rounded-lg bg-white/5 transition-all ${user.status === 'ACTIVE' ? 'text-white/40 hover:text-red-500 hover:bg-red-500/10' : 'text-green-500 bg-green-500/10'}`} title={user.status === 'ACTIVE' ? 'ब्लॉक करें' : 'अनब्लॉक करें'}>
                                    {user.status === 'ACTIVE' ? <Ban size={16} /> : <CheckCircle size={16} />}
-                                </button>
-                                <button className="p-2 rounded-lg bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all">
-                                   <MoreVertical size={16} />
                                 </button>
                              </div>
                           </td>

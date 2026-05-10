@@ -15,6 +15,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { getDonations, updateDonationStatus } from '@/services/dataService';
+import { supabase } from '@/lib/supabase';
 
 export default function DonationManagementPage() {
   const [donations, setDonations] = useState<any[]>([]);
@@ -33,9 +34,29 @@ export default function DonationManagementPage() {
   }, []);
 
   const handleApprove = async (id: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
     const res = await updateDonationStatus(id, 'APPROVED');
     if (res.success) {
+      await supabase.from('donations').update({ verified_by_name: session?.user.email }).eq('id', id);
       loadDonations();
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    const reason = window.prompt('अस्वीकार करने का कारण (Reason for rejection):');
+    if (reason === null) return;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const { error } = await supabase.from('donations').update({ 
+      status: 'REJECTED', 
+      rejection_reason: reason,
+      verified_by_name: session?.user.email 
+    }).eq('id', id);
+
+    if (!error) {
+      loadDonations();
+    } else {
+      alert('Error: ' + error.message);
     }
   };
 
@@ -133,13 +154,22 @@ export default function DonationManagementPage() {
                         <td className="px-8 py-6">
                            <div className="flex items-center gap-3">
                               {d.status === 'PENDING' && (
-                                 <button 
-                                   onClick={() => handleApprove(d.id)}
-                                   className="p-2 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white transition-all" 
-                                   title="Approve"
-                                 >
-                                    <CheckCircle size={16} />
-                                 </button>
+                                 <>
+                                   <button 
+                                     onClick={() => handleApprove(d.id)}
+                                     className="p-2 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white transition-all" 
+                                     title="Approve"
+                                   >
+                                      <CheckCircle size={16} />
+                                   </button>
+                                   <button 
+                                     onClick={() => handleReject(d.id)}
+                                     className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all" 
+                                     title="Reject"
+                                   >
+                                      <XCircle size={16} />
+                                   </button>
+                                 </>
                               )}
                               <button 
                                 onClick={() => window.print()}
