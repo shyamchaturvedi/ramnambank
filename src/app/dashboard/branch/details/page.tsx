@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 
 import { Building2, Save, MapPin, Phone, Globe, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { getBranches } from '@/services/dataService';
+import { supabase } from '@/lib/supabase';
 
 export default function MyBranchEdit() {
   const [branchData, setBranchData] = useState<any>(null);
@@ -11,12 +12,25 @@ export default function MyBranchEdit() {
   const [status, setStatus] = useState<'IDLE' | 'SUCCESS'>('IDLE');
 
   useEffect(() => {
-    // In a real app, we would fetch the branch linked to the logged-in user
-    // For now, simulating Kendrapara branch head
     const loadBranch = async () => {
-      const branches = await getBranches();
-      const myBranch = branches.find(b => b.code === 'OD/17');
-      setBranchData(myBranch);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { data: member } = await supabase
+            .from('members')
+            .select('branch_code')
+            .eq('email', session.user.email)
+            .maybeSingle();
+
+          if (member?.branch_code) {
+            const branches = await getBranches();
+            const myBranch = branches.find(b => b.code === member.branch_code);
+            setBranchData(myBranch);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading branch:', err);
+      }
     };
     loadBranch();
   }, []);

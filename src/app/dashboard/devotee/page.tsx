@@ -83,13 +83,13 @@ export default function DevoteeDashboard() {
                         <tr><td colSpan={4} className="px-8 py-20 text-center text-white/20 text-[10px] font-black uppercase tracking-widest">कोई इतिहास नहीं</td></tr>
                       ) : history.map((log, i) => (
                         <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
-                          <td className="px-8 py-6 text-[10px] font-bold text-white/60">{mounted ? new Date(log.deposited_at).toLocaleDateString('hi-IN') : '--'}</td>
+                          <td className="px-8 py-6 text-[10px] font-bold text-white/60">{mounted ? new Date(log.created_at).toLocaleDateString('hi-IN') : '--'}</td>
                           <td className="px-8 py-6">
                             <span className="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-green-400/10 text-green-400">
                               जमा
                             </span>
                           </td>
-                          <td className="px-8 py-6 text-sm font-black text-white">{log.ram_nam_count?.toLocaleString()}</td>
+                          <td className="px-8 py-6 text-sm font-black text-white">{log.quantity?.toLocaleString()}</td>
                           <td className="px-8 py-6 text-[10px] font-bold text-white/40 uppercase tracking-widest">{log.branches?.name || 'मुख्यालय'}</td>
                         </tr>
                       ))}
