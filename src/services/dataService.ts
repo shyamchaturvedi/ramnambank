@@ -148,8 +148,8 @@ export const getAdminStats = async () => {
     const { data: inventory } = await supabase.from('inventory').select('quantity, item_name');
     
     const totalBooks = inventory?.filter(i => i.item_name === 'BOOK').reduce((acc, curr) => acc + curr.quantity, 0) || 0;
-    const { data: depositsData } = await supabase.from('deposits').select('ram_nam_count');
-    const totalDonations = depositsData?.reduce((acc, curr) => acc + (Number(curr.ram_nam_count) || 0), 0) || 0;
+    const { data: submissionsData } = await supabase.from('booklet_submissions').select('quantity');
+    const totalDonations = submissionsData?.reduce((acc, curr) => acc + (Number(curr.quantity) || 0), 0) || 0;
     
     return {
       totalBhakt: bhaktCount || 0,
@@ -266,10 +266,10 @@ export const getMemberBookletHistory = async (memberId: string) => {
   try {
     // Query deposits table instead of inventory_logs to get member's spiritual wealth history
     const { data, error } = await supabase
-      .from('deposits')
+      .from('booklet_submissions')
       .select('*, branches(name)')
       .eq('member_id', memberId)
-      .order('deposited_at', { ascending: false });
+      .order('created_at', { ascending: false });
       
     if (error) {
       console.error('Database query error:', error.message);
@@ -304,11 +304,11 @@ export const getRecentActivities = async () => {
       .order('created_at', { ascending: false })
       .limit(3);
 
-    // Fetch recent deposits
-    const { data: deposits } = await supabase
-      .from('deposits')
-      .select('ram_nam_count, deposited_at, members(full_name)')
-      .order('deposited_at', { ascending: false })
+    // Fetch recent submissions
+    const { data: submissions } = await supabase
+      .from('booklet_submissions')
+      .select('quantity, created_at, members(full_name)')
+      .order('created_at', { ascending: false })
       .limit(3);
 
     const activities: any[] = [];
@@ -323,11 +323,11 @@ export const getRecentActivities = async () => {
       });
     });
 
-    deposits?.forEach(d => {
+    submissions?.forEach(d => {
       activities.push({
         type: 'STOCK',
-        text: `पुस्तिका जमा: ${d.members?.full_name || '...'} (${d.ram_nam_count} नाम)`,
-        time: d.deposited_at,
+        text: `पुस्तिका जमा: ${d.members?.full_name || '...'} (${d.quantity} नाम)`,
+        time: d.created_at,
         icon: 'Box',
         color: 'text-green-400'
       });
