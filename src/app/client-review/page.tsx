@@ -39,19 +39,19 @@ export default function ClientReviewPage() {
       title: "एडमिन कंट्रोल (Admin & Management)",
       icon: <Settings size={20} className="text-red-500" />,
       pages: [
-        { name: 'यूजर मैनेजमेंट (Roles/Block)', path: '/dashboard/users' },
-        { name: 'दान प्रबंधन (UTR/Cash Approval)', path: '/dashboard/donations' },
-        { name: 'आध्यात्मिक लेजर (Master Reports)', path: '/dashboard/ledger' },
-        { name: 'मास्टर सेटिंग्स (UPI/Social)', path: '/dashboard/settings' },
+        { name: 'यूजर मैनेजमेंट (Roles/Block)', path: '/dashboard/admin/users' },
+        { name: 'दान प्रबंधन (UTR/Cash Approval)', path: '/dashboard/admin/donations' },
+        { name: 'आध्यात्मिक लेजर (Master Reports)', path: '/dashboard/devotee/ledger' },
+        { name: 'मास्टर सेटिंग्स (UPI/Social)', path: '/dashboard/admin/settings' },
       ]
     },
     {
       title: "शाखा एवं वॉलिंटियर टूल (Staff Tools)",
       icon: <LayoutDashboard size={20} className="text-blue-500" />,
       pages: [
-        { name: 'शाखा इन्वेंटरी (Stock Tracking)', path: '/dashboard/inventory' },
-        { name: 'पुस्तिका सत्यापन (Verification)', path: '/dashboard/verify' },
-        { name: 'भक्त प्रोफाइल (ID Card/Progress)', path: '/dashboard/profile' },
+        { name: 'शाखा इन्वेंटरी (Stock Tracking)', path: '/dashboard/branch/inventory' },
+        { name: 'पुस्तिका सत्यापन (Verification)', path: '/dashboard/volunteer/verify' },
+        { name: 'भक्त प्रोफाइल (ID Card/Progress)', path: '/dashboard/devotee/profile' },
       ]
     }
   ];

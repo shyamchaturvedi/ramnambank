@@ -100,14 +100,16 @@ export default function CommitteePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {kendraparaCommittee.map((member, i) => (
+            {kendraparaCommittee.length === 0 ? (
+               <div className="col-span-full py-20 text-center text-white/20 uppercase font-black tracking-widest text-[10px]">समिति विवरण उपलब्ध नहीं है</div>
+            ) : kendraparaCommittee.map((member, i) => (
               <div key={i} className="premium-card p-8 space-y-4 border-l-2 border-saffron/30">
                 <div>
-                   <h4 className="text-sm font-black text-white uppercase tracking-wider">{member.name}</h4>
+                   <h4 className="text-sm font-black text-white uppercase tracking-wider">{member.full_name}</h4>
                    <p className="text-[9px] text-saffron font-bold uppercase tracking-widest mt-1">{member.post}</p>
                 </div>
                 <div className="flex items-center gap-2 text-white/30 text-[10px] font-mono">
-                   <Phone size={12} /> {member.phone}
+                   <Phone size={12} /> {member.mobile_no}
                 </div>
               </div>
             ))}

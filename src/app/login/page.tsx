@@ -23,6 +23,11 @@ export default function CentralLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -75,41 +80,44 @@ export default function CentralLogin() {
         password: password,
       });
 
-      if (authError) {
-        console.log('Auth Failed:', authError.message);
-        
-        // 3. AUTO-SYNC: If user exists in DB but not in Auth, sync them
-        if (memberRecord) {
-          console.log('Syncing DB member to Auth...');
-          const { error: syncError } = await supabase.auth.signUp({
-            email: targetEmail,
-            password: password,
-            options: { data: { role: memberRecord.role || 'MEMBER', full_name: memberRecord.full_name } }
-          });
-
-          if (!syncError || syncError.message.includes('already registered')) {
-            const { error: retryError } = await supabase.auth.signInWithPassword({
+        if (authError) {
+          console.log('Auth Failed:', authError.message);
+          
+          // 3. AUTO-SYNC: If user exists in DB but not in Auth, sync them
+          if (memberRecord) {
+            console.log('Syncing DB member to Auth...');
+            const { error: syncError } = await supabase.auth.signUp({
               email: targetEmail,
-              password: password
+              password: password,
+              options: { data: { role: memberRecord.role || 'MEMBER', full_name: memberRecord.full_name } }
             });
-            
-            if (!retryError) {
-              console.log('Retry success, hard redirecting...');
-              window.location.href = '/dashboard';
-              return;
+
+            if (!syncError || syncError.message.includes('already registered')) {
+              console.log('Sync/SignUp success or already registered, retrying sign-in...');
+              const { error: retryError } = await supabase.auth.signInWithPassword({
+                email: targetEmail,
+                password: password
+              });
+              
+              if (!retryError) {
+                console.log('Retry success, hard redirecting to /dashboard...');
+                window.location.replace('/dashboard');
+                return;
+              } else {
+                console.error('Retry Failed:', retryError.message);
+              }
+            } else {
+              console.error('Sync/SignUp Failed:', syncError.message);
             }
           }
-        }
-        
-        setError('गलत आईडी या पासवर्ड। कृपया पुनः प्रयास करें।');
-      } else {
-        console.log('Login success! Hard redirecting...');
-        setError('सफलता! डैशबोर्ड पर जा रहे हैं...'); // Show success on UI
-        setTimeout(() => {
+          
+          setError('गलत आईडी या पासवर्ड। कृपया पुनः प्रयास करें।');
+        } else {
+          // Hard redirect to dashboard immediately on success
+          console.log('Login: Triggering hard redirect to /dashboard');
           window.location.href = '/dashboard';
-        }, 1000);
-        return;
-      }
+          return;
+        }
     } catch (err: any) {
       console.error('System Login Error:', err);
       setError('सर्वर की समस्या। कृपया इंटरनेट चेक करें।');
@@ -129,7 +137,7 @@ export default function CentralLogin() {
           <div className="text-center space-y-4">
              <div className="w-16 h-16 rounded-2xl bg-saffron mx-auto flex items-center justify-center text-3xl font-bold text-black">ॐ</div>
              <h1 className="text-3xl font-black font-serif gold-text uppercase tracking-widest mt-4">पोर्टल प्रवेश</h1>
-             <p className="text-[8px] text-white/10 uppercase tracking-[0.3em]">Build: {new Date().toLocaleTimeString()} (Robust Auth V3)</p>
+             <p className="text-[8px] text-white/10 uppercase tracking-[0.3em]">Build: {mounted ? new Date().toLocaleTimeString() : '--:--:--'} (Robust Auth V3)</p>
              
              <button 
                type="button"

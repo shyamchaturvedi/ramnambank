@@ -28,92 +28,78 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { useRole } from '@/components/RoleContext';
 
 export default function DashboardLayout({
   children,
+  userRole = 'DEVOTEE',
 }: {
   children: React.ReactNode;
+  userRole?: 'ADMIN' | 'DEVOTEE' | 'BRANCH_MANAGER' | 'VOLUNTEER';
 }) {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  const { role: internalUserRole } = useRole();
 
-  // 1. Anti-Debug Security
+  // 1. Mounted Check
   useEffect(() => {
-    const handleDevTools = (e: KeyboardEvent) => {
-      // Block F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
-      if (
-        e.key === 'F12' || 
-        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
-        (e.ctrlKey && e.key === 'U')
-      ) {
-        e.preventDefault();
-        alert('सुरक्षा कारणों से डेवलपर मोड प्रतिबंधित है!');
-        supabase.auth.signOut().then(() => router.push('/login'));
-      }
-    };
-
-    const detectDevTools = () => {
-      // Disable this check for mobile devices to avoid false positives
-      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        return;
-      }
-
-      const threshold = 160;
-      if (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold) {
-        // DevTools likely open
-        supabase.auth.signOut().then(() => router.push('/login'));
-      }
-    };
-
-    window.addEventListener('keydown', handleDevTools);
-    const interval = setInterval(detectDevTools, 2000);
-    
-    // Disable Right Click
-    document.oncontextmenu = (e) => {
-      e.preventDefault();
-      return false;
-    };
-
-    return () => {
-      window.removeEventListener('keydown', handleDevTools);
-      clearInterval(interval);
-      document.oncontextmenu = null;
-    };
+    setMounted(true);
   }, []);
-
-  // Mock role - In real app, this comes from your Auth Context
-  const userRole = 'ADMIN'; 
 
   const menuGroups = {
     ADMIN: [
-      { name: 'ओवरव्यू', icon: LayoutDashboard, href: '/dashboard' },
-      { name: 'यूजर मैनेजमेंट', icon: Users, href: '/dashboard/users' },
+      { name: 'ओवरव्यू', icon: LayoutDashboard, href: '/dashboard/admin' },
+      { name: 'यूजर मैनेजमेंट', icon: Users, href: '/dashboard/admin/users' },
       { name: 'शाखा प्रबंधन', icon: Building2, href: '/dashboard/admin/branches' },
-      { name: 'बल्क अपलोड', icon: Upload, href: '/dashboard/bulk-upload' },
-      { name: 'दान प्रबंधन', icon: IndianRupee, href: '/dashboard/donations' },
-      { name: 'संग्रह एवं सत्यापन', icon: CheckCircle2, href: '/dashboard/verify' },
-      { name: 'शाखा इन्वेंटरी', icon: Box, href: '/dashboard/inventory' },
-      { name: 'आध्यात्मिक लेजर', icon: FileSearch, href: '/dashboard/ledger' },
-      { name: 'मास्टर सेटिंग्स', icon: Settings, href: '/dashboard/settings' },
+      { name: 'बल्क अपलोड', icon: Upload, href: '/dashboard/admin/bulk-upload' },
+      { name: 'दान प्रबंधन', icon: IndianRupee, href: '/dashboard/admin/donations' },
+      { name: 'संग्रह एवं सत्यापन', icon: CheckCircle2, href: '/dashboard/volunteer/verify' },
+      { name: 'शाखा इन्वेंटरी', icon: Box, href: '/dashboard/branch/inventory' },
+      { name: 'आध्यात्मिक लेजर', icon: FileSearch, href: '/dashboard/devotee/ledger' },
+      { name: 'मास्टर सेटिंग्स', icon: Settings, href: '/dashboard/admin/settings' },
     ],
     BRANCH_MANAGER: [
-      { name: 'शाखा डैशबोर्ड', icon: LayoutDashboard, href: '/dashboard' },
-      { name: 'मेरे भक्त', icon: Users, href: '/dashboard/devotees' },
-      { name: 'मेरी शाखा', icon: Building2, href: '/dashboard/my-branch' },
-      { name: 'स्टॉक प्रबंधन', icon: Box, href: '/dashboard/inventory' },
+      { name: 'शाखा डैशबोर्ड', icon: LayoutDashboard, href: '/dashboard/branch/details' },
+      { name: 'मेरे भक्त', icon: Users, href: '/dashboard/admin/users' }, // Manager might see filtered users
+      { name: 'मेरी शाखा', icon: Building2, href: '/dashboard/branch/details' },
+      { name: 'स्टॉक प्रबंधन', icon: Box, href: '/dashboard/branch/inventory' },
     ],
     VOLUNTEER: [
-      { name: 'एंट्री पैनल', icon: LayoutDashboard, href: '/dashboard' },
-      { name: 'बुकलेट वेरिफिकेशन', icon: CheckCircle2, href: '/dashboard/verify' },
+      { name: 'एंट्री पैनल', icon: LayoutDashboard, href: '/dashboard/volunteer/verify' },
+      { name: 'बुकलेट वेरिफिकेशन', icon: CheckCircle2, href: '/dashboard/volunteer/verify' },
     ],
     DEVOTEE: [
-      { name: 'मेरा संचय', icon: LayoutDashboard, href: '/dashboard' },
-      { name: 'मेरा प्रोफाइल', icon: User, href: '/dashboard/profile' },
+      { name: 'मेरा संचय', icon: LayoutDashboard, href: '/dashboard/devotee' },
+      { name: 'मेरा प्रोफाइल', icon: User, href: '/dashboard/devotee/profile' },
+      { name: 'मेरा लेजर', icon: FileSearch, href: '/dashboard/devotee/ledger' },
     ]
   };
 
-  const navItems = menuGroups[userRole as keyof typeof menuGroups] || menuGroups.DEVOTEE;
+  const navItems = menuGroups[internalUserRole as keyof typeof menuGroups] || menuGroups.DEVOTEE;
+
+  // 2. Route Protection
+  useEffect(() => {
+    if (mounted && internalUserRole) {
+      const path = pathname;
+      
+      // Admin protection
+      if (path.startsWith('/dashboard/admin') && internalUserRole !== 'ADMIN') {
+        router.replace('/dashboard');
+      }
+      
+      // Branch Manager protection
+      if (path.startsWith('/dashboard/branch') && !['ADMIN', 'BRANCH_MANAGER'].includes(internalUserRole)) {
+        router.replace('/dashboard');
+      }
+
+      // Volunteer protection
+      if (path.startsWith('/dashboard/volunteer') && !['ADMIN', 'BRANCH_MANAGER', 'VOLUNTEER'].includes(internalUserRole)) {
+        router.replace('/dashboard');
+      }
+    }
+  }, [mounted, internalUserRole, pathname, router]);
 
   return (
     <div className="flex h-screen bg-[#0A0A0A] text-white overflow-hidden font-sans">
@@ -133,7 +119,7 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <motion.aside 
         animate={{ 
-          x: isMobileMenuOpen ? 0 : (typeof window !== 'undefined' && window.innerWidth >= 1024 ? 0 : '-100%'),
+          x: isMobileMenuOpen ? 0 : (mounted && typeof window !== 'undefined' && window.innerWidth >= 1024 ? 0 : '-100%'),
         }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
         className={`fixed left-0 top-0 h-screen bg-[#0A0A0A] border-r border-white/5 z-[100] w-72 transition-shadow ${isMobileMenuOpen ? 'shadow-[0_0_50px_rgba(0,0,0,0.8)]' : ''}`}
@@ -175,10 +161,16 @@ export default function DashboardLayout({
           </nav>
 
           <div className="pt-8 border-t border-white/5">
-             <Link href="/login" className="flex items-center gap-4 px-6 py-4 rounded-2xl text-red-500/60 hover:text-red-500 hover:bg-red-500/5 transition-all w-full">
+             <button 
+               onClick={async () => {
+                 await supabase.auth.signOut();
+                 router.push('/login');
+               }} 
+               className="flex items-center gap-4 px-6 py-4 rounded-2xl text-red-500/60 hover:text-red-500 hover:bg-red-500/5 transition-all w-full text-left"
+             >
                 <LogOut size={20} />
                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">लॉगआउट</span>
-             </Link>
+             </button>
           </div>
         </div>
       </motion.aside>
@@ -228,11 +220,11 @@ export default function DashboardLayout({
             </button>
             <div className="flex items-center gap-4 pl-6 border-l border-white/10">
               <div className="text-right hidden sm:block">
-                <p className="text-[10px] font-black text-white uppercase tracking-widest">अयोध्या मुख्यालय</p>
-                <p className="text-[9px] text-white/30 uppercase tracking-[0.2em] font-bold mt-1 text-saffron">सुपर एडमिन</p>
+                <p className="text-[10px] font-black text-white uppercase tracking-widest">{internalUserRole === 'ADMIN' ? 'अयोध्या मुख्यालय' : 'श्री राम भक्त'}</p>
+                <p className="text-[9px] text-white/30 uppercase tracking-[0.2em] font-bold mt-1 text-saffron">{internalUserRole}</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-white/10 to-transparent flex items-center justify-center text-saffron font-bold border border-white/10 sacred-glow shadow-inner">
-                AA
+                {internalUserRole === 'ADMIN' ? 'AA' : 'RB'}
               </div>
             </div>
           </div>

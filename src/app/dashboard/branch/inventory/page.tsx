@@ -1,19 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
 import { Box, Plus, Minus, History, Search, AlertTriangle, CheckCircle2, Building2, MessageSquare, Send, Clock, Loader2 } from 'lucide-react';
-import { getBranches, createStockRequest, getStockRequests } from '@/services/dataService';
+import { getBranches, createStockRequest, getStockRequests, getInventory } from '@/services/dataService';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRole } from '@/components/RoleContext';
 
 export default function InventoryManagement() {
-  const [userRole, setUserRole] = useState<'ADMIN' | 'BRANCH_MANAGER'>('ADMIN');
+  const { role: userRole } = useRole();
   const [branches, setBranches] = useState<any[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string>('');
-  const [inventory, setInventory] = useState<any[]>([
-    { item_name: 'BOOK', quantity: 1250 },
-    { item_name: 'PEN', quantity: 3400 }
-  ]);
+  const [inventory, setInventory] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -29,6 +26,12 @@ export default function InventoryManagement() {
     loadInitialData();
   }, [userRole]);
 
+  useEffect(() => {
+    if (selectedBranch) {
+       loadBranchInventory();
+    }
+  }, [selectedBranch]);
+
   const loadInitialData = async () => {
     setIsLoading(true);
     const [branchData, requestData] = await Promise.all([
@@ -37,7 +40,22 @@ export default function InventoryManagement() {
     ]);
     setBranches(branchData);
     setRequests(requestData);
-    if (branchData.length > 0) setSelectedBranch(branchData[0].id);
+    if (branchData.length > 0) {
+      setSelectedBranch(branchData[0].id);
+    } else {
+      setIsLoading(false);
+    }
+  };
+
+  const loadBranchInventory = async () => {
+    const invData = await getInventory(selectedBranch);
+    // Ensure we always have BOOK and PEN even if not in DB (with 0)
+    const items = ['BOOK', 'PEN'];
+    const merged = items.map(itemName => {
+       const found = invData.find(i => i.item_name === itemName);
+       return found || { item_name: itemName, quantity: 0 };
+    });
+    setInventory(merged);
     setIsLoading(false);
   };
 
@@ -58,13 +76,8 @@ export default function InventoryManagement() {
   };
 
   return (
-    <DashboardLayout>
       <div className="space-y-10 pb-20">
-        <div className="flex justify-end gap-4">
-           <button onClick={() => setUserRole(userRole === 'ADMIN' ? 'BRANCH_MANAGER' : 'ADMIN')} className="text-[8px] font-black uppercase tracking-widest text-white/20 hover:text-saffron">
-             Switch to {userRole === 'ADMIN' ? 'Branch Manager' : 'Admin'} View
-           </button>
-        </div>
+
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
@@ -227,6 +240,5 @@ export default function InventoryManagement() {
           )}
         </AnimatePresence>
       </div>
-    </DashboardLayout>
   );
 }

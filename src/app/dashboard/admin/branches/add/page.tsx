@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
 import { 
   MapPin, 
   User, 
@@ -41,25 +40,24 @@ export default function AddBranchPage() {
     setTimeout(() => {
       setIsSubmitting(false);
       alert('नई शाखा सफलतापूर्वक जोड़ी गई!');
-      window.location.href = '/dashboard/branches';
+      window.location.href = '/dashboard/admin/branches';
     }, 1500);
   };
 
   return (
-    <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between text-white">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard/branches" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all">
-               <ArrowLeft size={20} />
-            </Link>
-            <div>
-              <h2 className="text-3xl font-black font-serif uppercase gold-text">नई शाखा जोड़ें</h2>
-              <p className="text-white/40 text-sm mt-1">बैंक के नेटवर्क का विस्तार करें।</p>
-            </div>
+    <div className="max-w-4xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between text-white">
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/admin/branches" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all">
+             <ArrowLeft size={20} />
+          </Link>
+          <div>
+            <h2 className="text-3xl font-black font-serif uppercase gold-text">नई शाखा जोड़ें</h2>
+            <p className="text-white/40 text-sm mt-1">बैंक के नेटवर्क का विस्तार करें।</p>
           </div>
         </div>
+      </div>
 
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -186,6 +184,5 @@ export default function AddBranchPage() {
           </form>
         </motion.div>
       </div>
-    </DashboardLayout>
   );
 }

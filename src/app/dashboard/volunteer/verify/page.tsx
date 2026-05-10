@@ -1,13 +1,12 @@
 "use client";
 
 import React from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
+
 import { CheckCircle2, Search, BookOpen, AlertCircle, ArrowRight, Package, Download } from 'lucide-react';
 
 export default function VolunteerVerifyPage() {
   return (
-    <DashboardLayout>
-      <div className="space-y-8 pb-20">
+    <div className="space-y-8 pb-20">
         <div className="space-y-1">
            <h2 className="text-3xl font-black font-serif gold-text uppercase">पुस्तिका सत्यापन</h2>
            <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.3em]">Verify physical booklets and approve entries</p>
@@ -96,6 +95,5 @@ export default function VolunteerVerifyPage() {
               ))}
            </div>
         </div>
-    </DashboardLayout>
   );
 }

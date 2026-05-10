@@ -28,6 +28,7 @@ function RegistrationForm() {
   const [selectedBlock, setSelectedBlock] = useState<any>(null);
   const [submitStatus, setSubmitStatus] = useState<'IDLE' | 'SUCCESS' | 'ERROR'>('IDLE');
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   // Form Fields
   const [form, setForm] = useState({
@@ -41,6 +42,7 @@ function RegistrationForm() {
   });
 
   useEffect(() => {
+    setMounted(true);
     const ref = searchParams.get('ref') || searchParams.get('referral_code');
     if (ref) {
       setForm(prev => ({ ...prev, referral_code: ref }));
@@ -174,7 +176,7 @@ function RegistrationForm() {
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-6 bg-saffron/5 border border-saffron/20 rounded-3xl flex items-center justify-between">
                  <div className="space-y-1">
                     <p className="text-[9px] font-black text-saffron uppercase tracking-widest">संभावित सदस्य आईडी (ID Preview)</p>
-                    <p className="text-lg font-black font-mono text-white tracking-widest">{selectedBlock.code}/{new Date().getFullYear()}/XXXX</p>
+                    <p className="text-lg font-black font-mono text-white tracking-widest">{selectedBlock.code}/{mounted ? new Date().getFullYear() : 'YYYY'}/XXXX</p>
                  </div>
                  <div className="w-10 h-10 bg-saffron/10 rounded-full flex items-center justify-center text-saffron">
                     <CheckCircle2 size={20} />

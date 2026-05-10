@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
+
 import { Building2, Save, MapPin, Phone, Globe, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { getBranches } from '@/services/dataService';
 
@@ -32,11 +32,10 @@ export default function MyBranchEdit() {
     }, 1500);
   };
 
-  if (!branchData) return <DashboardLayout><div className="text-white/20 p-20 text-center uppercase font-black tracking-widest">शाखा का विवरण लोड हो रहा है...</div></DashboardLayout>;
+  if (!branchData) return <div className="text-white/20 p-20 text-center uppercase font-black tracking-widest">शाखा का विवरण लोड हो रहा है...</div>;
 
   return (
-    <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-8 pb-20">
+    <div className="max-w-4xl mx-auto space-y-8 pb-20">
         <div className="flex justify-between items-end">
           <div>
             <h2 className="text-3xl font-black font-serif uppercase gold-text text-white">मेरी शाखा का प्रबंधन</h2>
@@ -128,6 +127,5 @@ export default function MyBranchEdit() {
           </div>
         </form>
       </div>
-    </DashboardLayout>
   );
 }

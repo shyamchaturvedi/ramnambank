@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
+
 import { User, Mail, MapPin, Calendar, Award, Edit3, Shield } from 'lucide-react';
 import Image from 'next/image';
 import DigitalIDCard from '@/components/DigitalIDCard';
@@ -14,8 +14,7 @@ export default function ProfilePage() {
     branch: 'अयोध्या (मुख्य)'
   };
   return (
-    <DashboardLayout>
-      <div className="space-y-12 pb-20">
+    <div className="space-y-12 pb-20">
         <div className="flex justify-between items-end">
            <div className="flex items-center gap-10">
               <div className="relative w-32 h-32 rounded-3xl overflow-hidden border-4 border-saffron/20 sacred-glow">
@@ -88,6 +87,5 @@ export default function ProfilePage() {
            </div>
         </div>
       </div>
-    </DashboardLayout>
   );
 }

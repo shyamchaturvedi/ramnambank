@@ -15,7 +15,7 @@ import {
 import { motion } from 'framer-motion';
 import Footer from '@/components/Footer';
 
-import { getMembershipPlans, getSettings } from '@/services/dataService';
+import { getMembershipPlans, getSettings, submitDonation, getAdminStats } from '@/services/dataService';
 import * as LucideIcons from 'lucide-react';
 
 const donationCauses = [
@@ -27,20 +27,46 @@ const donationCauses = [
 export default function DonateClient() {
   const [membershipPlans, setMembershipPlans] = React.useState<any[]>([]);
   const [upiId, setUpiId] = React.useState('ramnam.bank@upi');
+  const [stats, setStats] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
+  const [formData, setFormData] = React.useState({
+    donor_name: '',
+    amount: '',
+    utr_number: ''
+  });
+  const [submitting, setSubmitting] = React.useState(false);
 
   React.useEffect(() => {
     const loadData = async () => {
-      const [plans, settings] = await Promise.all([
+      const [plans, settings, realStats] = await Promise.all([
         getMembershipPlans(),
-        getSettings()
+        getSettings(),
+        getAdminStats()
       ]);
       setMembershipPlans(plans);
       if (settings?.upi_id) setUpiId(settings.upi_id);
+      setStats(realStats);
       setLoading(false);
     };
     loadData();
   }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    const res = await submitDonation({
+      ...formData,
+      status: 'PENDING',
+      created_at: new Date().toISOString()
+    });
+    if (res.success) {
+      alert('विवरण सबमिट कर दिया गया है। सत्यापन के बाद रसीद जारी की जाएगी।');
+      setFormData({ donor_name: '', amount: '', utr_number: '' });
+    } else {
+      alert('त्रुटि: ' + res.error);
+    }
+    setSubmitting(false);
+  };
 
   const getIcon = (name: string) => {
     // @ts-ignore
@@ -200,10 +226,10 @@ export default function DonateClient() {
              </div>
              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                 {[
-                  { label: 'कुल दानकर्ता', value: '10,000+' },
-                  { label: 'पुस्तिका वितरण', value: '5 लाख+' },
-                  { label: 'भोजन सेवा', value: '1 लाख+' },
-                  { label: 'आध्यात्मिक केंद्र', value: '50+' },
+                  { label: 'कुल भक्त', value: stats?.totalBhakt || '0' },
+                  { label: 'पुस्तिका संचय', value: stats?.totalBooks || '0' },
+                  { label: 'राम नाम संचय', value: stats?.totalDonations ? (stats.totalDonations / 1000000).toFixed(1) + 'M' : '0' },
+                  { label: 'सक्रिय शाखाएं', value: stats?.totalBranches || '0' },
                 ].map((s, i) => (
                   <div key={i} className="premium-card p-8">
                      <h4 className="text-3xl font-black gold-text mb-2 font-mono">{s.value}</h4>
@@ -220,29 +246,46 @@ export default function DonateClient() {
                    <ShieldCheck size={32} />
                  </div>
                 <h2 className="text-3xl font-black font-serif uppercase tracking-widest">भुगतान की जानकारी दें</h2>
-                <p className="text-white/40 text-xs font-bold uppercase tracking-widest">Submit your UTR/Reference number for approval</p>
+                <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Submit your UTR/Reference number for approval</p>
              </div>
 
-             <div className="max-w-xl mx-auto space-y-8">
+             <form onSubmit={handleSubmit} className="max-w-xl mx-auto space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                    <div className="space-y-3">
                       <label className="text-[10px] font-black text-white/30 uppercase tracking-widest">दाता का नाम</label>
-                      <input type="text" placeholder="आपका शुभ नाम" className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 outline-none focus:border-saffron/50 text-sm" />
+                      <input 
+                        type="text" required
+                        value={formData.donor_name}
+                        onChange={(e) => setFormData({...formData, donor_name: e.target.value})}
+                        placeholder="आपका शुभ नाम" className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 outline-none focus:border-saffron/50 text-sm" 
+                      />
                    </div>
                    <div className="space-y-3">
                       <label className="text-[10px] font-black text-white/30 uppercase tracking-widest">दान राशि</label>
-                      <input type="text" placeholder="₹0.00" className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 outline-none focus:border-saffron/50 text-sm font-bold text-saffron" />
+                      <input 
+                        type="number" required
+                        value={formData.amount}
+                        onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                        placeholder="₹0.00" className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 outline-none focus:border-saffron/50 text-sm font-bold text-saffron" 
+                      />
                    </div>
                 </div>
                 <div className="space-y-3">
                    <label className="text-[10px] font-black text-white/30 uppercase tracking-widest">UTR / ट्रांजेक्शन नंबर</label>
-                   <input type="text" placeholder="e.g. 123456789012" className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 outline-none focus:border-saffron/50 text-sm font-mono tracking-widest" />
+                   <input 
+                     type="text" required
+                     value={formData.utr_number}
+                     onChange={(e) => setFormData({...formData, utr_number: e.target.value})}
+                     placeholder="e.g. 123456789012" className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 outline-none focus:border-saffron/50 text-sm font-mono tracking-widest" 
+                   />
                 </div>
-                <button className="saffron-btn w-full py-5 text-sm">विवरण सबमिट करें</button>
+                <button type="submit" disabled={submitting} className="saffron-btn w-full py-5 text-sm flex items-center justify-center gap-3">
+                   {submitting ? <LucideIcons.Loader2 className="animate-spin" /> : 'विवरण सबमिट करें'}
+                </button>
                 <p className="text-[9px] text-center text-white/20 italic">
                    * विवरण सबमिट करने के बाद, हमारी टीम बैंक से मिलान करेगी और 24-48 घंटों में आपकी रसीद जारी कर दी जाएगी।
                 </p>
-             </div>
+             </form>
           </section>
         </div>
       </main>

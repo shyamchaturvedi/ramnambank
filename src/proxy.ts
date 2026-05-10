@@ -1,16 +1,36 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { supabase } from './lib/supabase';
+import { createServerClient } from '@supabase/auth-helpers-nextjs';
 
 export async function proxy(request: NextRequest) {
+  const res = NextResponse.next();
+  
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name) {
+          return request.cookies.get(name)?.value;
+        },
+        set(name, value, options) {
+          res.cookies.set({ name, value, ...options });
+        },
+        remove(name, options) {
+          res.cookies.set({ name, value: '', ...options });
+        },
+      },
+    }
+  );
+
   const { pathname } = request.nextUrl;
 
   // 1. Session Check for Dashboard
-  const sessionToken = request.cookies.get('sb-access-token')?.value || 
-                       request.cookies.get('supabase-auth-token')?.value;
+  const { data: { session } } = await supabase.auth.getSession();
 
   if (pathname.startsWith('/dashboard')) {
-    if (!sessionToken) {
+    if (!session) {
+      console.log('Middleware: No session found, redirecting to /login');
       return NextResponse.redirect(new URL('/login', request.url));
     }
   }
@@ -34,11 +54,11 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(new URL('/maintenance', request.url));
       }
     } catch (e) {
-      // Fail silently for maintenance to avoid breaking the site on DB hiccups
+      // Fail silently for maintenance
     }
   }
 
-  return NextResponse.next();
+  return res;
 }
 
 export const config = {
