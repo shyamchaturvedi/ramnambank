@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileSearch, 
   Calendar, 
@@ -13,15 +13,58 @@ import {
   MapPin,
   Search
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function LedgerReportPage() {
-  const [ledgerData] = useState([
-    { date: '2026-05-01', branch: 'अयोध्या (Main)', activity: 'राम नाम संचय', quantity: '5,00,000', type: 'COLLECTION', user: 'राम सेवक' },
-    { date: '2026-05-01', branch: 'वाराणसी', activity: 'पुस्तिका वितरण', quantity: '50 Units', type: 'LOGISTICS', user: 'अमित कुमार' },
-    { date: '2026-05-02', branch: 'इंदौर', activity: 'सेवा दान संचय', quantity: '₹25,000', type: 'DONATION', user: 'राहुल शर्मा' },
-    { date: '2026-05-02', branch: 'अयोध्या (Main)', activity: 'राम नाम संचय', quantity: '12,00,000', type: 'COLLECTION', user: 'साहिल अग्रवाल' },
-    { date: '2026-05-03', branch: 'मुंबई', activity: 'पुस्तिका वितरण', quantity: '200 Units', type: 'LOGISTICS', user: 'संदीप वर्मा' },
-  ]);
+  const [ledgerData, setLedgerData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLedger = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+           // Get member id first
+           const { data: member } = await supabase
+             .from('members')
+             .select('id')
+             .eq('email', session.user.email)
+             .maybeSingle();
+
+           if (member) {
+              const { data, error } = await supabase
+                .from('booklet_submissions')
+                .select('*, branches(name)')
+                .eq('member_id', member.id)
+                .order('created_at', { ascending: false });
+
+              if (data) {
+                const formatted = data.map(item => ({
+                  date: new Date(item.created_at).toLocaleDateString('en-GB'),
+                  branch: item.branches?.name || 'Unknown',
+                  activity: 'राम नाम संचय',
+                  quantity: item.quantity.toLocaleString(),
+                  type: item.status === 'VERIFIED' ? 'COLLECTION' : 'LOGISTICS',
+                  user: item.status === 'VERIFIED' ? 'Verified' : 'Pending'
+                }));
+                setLedgerData(formatted);
+              }
+           }
+        }
+      } catch (error) {
+        console.error('Error fetching ledger:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchLedger();
+  }, []);
+
+  if (isLoading) {
+    return <div className="h-96 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-saffron"></div>
+    </div>;
+  }
 
   const getTypeStyle = (type: string) => {
     switch(type) {
