@@ -41,11 +41,24 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [userName, setUserName] = useState<string>('');
   const { role: internalUserRole } = useRole();
 
-  // 1. Mounted Check
+  // 1. Mounted Check & User Data Fetch
   useEffect(() => {
     setMounted(true);
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data } = await supabase
+          .from('members')
+          .select('full_name')
+          .eq('email', session.user.email)
+          .maybeSingle();
+        if (data) setUserName(data.full_name);
+      }
+    };
+    fetchUser();
   }, []);
 
   const menuGroups = {
@@ -220,11 +233,11 @@ export default function DashboardLayout({
             </button>
             <div className="flex items-center gap-4 pl-6 border-l border-white/10">
               <div className="text-right hidden sm:block">
-                <p className="text-[10px] font-black text-white uppercase tracking-widest">{internalUserRole === 'ADMIN' ? 'अयोध्या मुख्यालय' : 'श्री राम भक्त'}</p>
+                <p className="text-[10px] font-black text-white uppercase tracking-widest">{userName || (internalUserRole === 'ADMIN' ? 'एडमिन' : 'श्री राम भक्त')}</p>
                 <p className="text-[9px] text-white/30 uppercase tracking-[0.2em] font-bold mt-1 text-saffron">{internalUserRole}</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-white/10 to-transparent flex items-center justify-center text-saffron font-bold border border-white/10 sacred-glow shadow-inner">
-                {internalUserRole === 'ADMIN' ? 'AA' : 'RB'}
+                {userName ? userName.split(' ').map(n => n[0]).join('').toUpperCase() : (internalUserRole === 'ADMIN' ? 'AA' : 'RB')}
               </div>
             </div>
           </div>

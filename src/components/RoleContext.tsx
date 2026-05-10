@@ -20,7 +20,17 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchRole = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session Error:', error.message);
+          if (error.message.includes('Refresh Token Not Found')) {
+            await supabase.auth.signOut();
+            window.location.href = '/login';
+            return;
+          }
+        }
+
         if (session) {
           // 1. Check Metadata
           let userRole = session.user.user_metadata?.role;
@@ -41,6 +51,9 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
           if (userRole) {
             setRole(userRole.toUpperCase() as Role);
           }
+        } else {
+          // No session found, redirect to login
+          window.location.href = '/login';
         }
       } catch (error) {
         console.error('Error fetching role:', error);
@@ -52,11 +65,15 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     fetchRole();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth Event:', event);
       if (session) {
         const userRole = session.user.user_metadata?.role;
         if (userRole) {
           setRole(userRole.toUpperCase() as Role);
         }
+      } else if (event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+        // If user is signed out or token is invalid, redirect
+        window.location.href = '/login';
       }
     });
 

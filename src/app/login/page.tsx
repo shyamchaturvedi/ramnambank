@@ -32,63 +32,73 @@ export default function CentralLogin() {
   const handleLogin = async (e: React.FormEvent) => {
     if (e) e.preventDefault();
     
-    if (!email || !password) {
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
+
+    if (!cleanEmail || !cleanPassword) {
       alert('कृपया आईडी और पासवर्ड दोनों भरें!');
       return;
     }
 
-    console.log('Login attempt started for:', email);
+    console.log('Login attempt started for:', cleanEmail);
     setIsLoggingIn(true);
     setError(null);
 
     try {
-      console.log('Login process started for:', email);
+      console.log('Login process started for:', cleanEmail);
       
       // 1. Search the 'members' table for ANY match (Mobile, Email, or Membership ID)
-      // We do this by searching columns separately to avoid issues with special characters in '.or'
       let memberRecord = null;
       
       // Try Membership ID
-      const { data: byId } = await supabase.from('members').select('email, role, full_name, membership_id').eq('membership_id', email).maybeSingle();
+      const { data: byId } = await supabase.from('members').select('email, role, full_name, membership_id, password').eq('membership_id', cleanEmail).maybeSingle();
       if (byId) memberRecord = byId;
       
       // Try Mobile
       if (!memberRecord) {
-        const { data: byMobile } = await supabase.from('members').select('email, role, full_name, membership_id').eq('mobile_number', email).maybeSingle();
+        const { data: byMobile } = await supabase.from('members').select('email, role, full_name, membership_id, password').eq('mobile_number', cleanEmail).maybeSingle();
         if (byMobile) memberRecord = byMobile;
       }
       
       // Try Email
-      if (!memberRecord && email.includes('@')) {
-        const { data: byEmail } = await supabase.from('members').select('email, role, full_name, membership_id').eq('email', email).maybeSingle();
+      if (!memberRecord && cleanEmail.includes('@')) {
+        const { data: byEmail } = await supabase.from('members').select('email, role, full_name, membership_id, password').eq('email', cleanEmail).maybeSingle();
         if (byEmail) memberRecord = byEmail;
       }
 
       console.log('Member Record Result:', memberRecord ? 'Found' : 'Not Found');
 
-      let targetEmail = email;
+      let targetEmail = cleanEmail;
       if (memberRecord?.email) {
         targetEmail = memberRecord.email;
         console.log('Found registered email:', targetEmail);
-      } else if (!email.includes('@')) {
-        targetEmail = `${email}@ramnam.bank`;
+      } else if (!cleanEmail.includes('@')) {
+        targetEmail = `${cleanEmail}@ramnam.bank`;
       }
 
-      // 2. Attempt Login
+      // 2. Local Password Verification (Optional but helpful for debugging sync issues)
+      if (memberRecord && memberRecord.password && memberRecord.password !== cleanPassword) {
+        console.log('Local password mismatch for:', cleanEmail);
+        setError('गलत आईडी या पासवर्ड। (Code: P-MM)');
+        setIsLoggingIn(false);
+        return;
+      }
+
+      // 3. Attempt Login
       const { data: authResult, error: authError } = await supabase.auth.signInWithPassword({
         email: targetEmail,
-        password: password,
+        password: cleanPassword,
       });
 
         if (authError) {
           console.log('Auth Failed:', authError.message);
           
-          // 3. AUTO-SYNC: If user exists in DB but not in Auth, sync them
+          // 4. AUTO-SYNC: If user exists in DB but not in Auth, sync them
           if (memberRecord) {
             console.log('Syncing DB member to Auth...');
             const { error: syncError } = await supabase.auth.signUp({
               email: targetEmail,
-              password: password,
+              password: cleanPassword,
               options: { data: { role: memberRecord.role || 'MEMBER', full_name: memberRecord.full_name } }
             });
 
@@ -96,7 +106,7 @@ export default function CentralLogin() {
               console.log('Sync/SignUp success or already registered, retrying sign-in...');
               const { error: retryError } = await supabase.auth.signInWithPassword({
                 email: targetEmail,
-                password: password
+                password: cleanPassword
               });
               
               if (!retryError) {
@@ -105,13 +115,15 @@ export default function CentralLogin() {
                 return;
               } else {
                 console.error('Retry Failed:', retryError.message);
+                setError('लॉगिन विफल। कृपया एडमिन से संपर्क करें। (Code: R-FAIL)');
               }
             } else {
               console.error('Sync/SignUp Failed:', syncError.message);
+              setError('अकाउंट सिंक विफल। कृपया पुनः प्रयास करें।');
             }
+          } else {
+            setError('गलत आईडी या पासवर्ड। कृपया पुनः प्रयास करें।');
           }
-          
-          setError('गलत आईडी या पासवर्ड। कृपया पुनः प्रयास करें।');
         } else {
           // Hard redirect to dashboard immediately on success
           console.log('Login: Triggering hard redirect to /dashboard');
