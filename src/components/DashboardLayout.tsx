@@ -42,29 +42,45 @@ export default function DashboardLayout({
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [userName, setUserName] = useState<string>('');
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
   const { role: internalUserRole } = useRole();
 
   // 1. Mounted Check & User Data Fetch
   useEffect(() => {
     setMounted(true);
-    const fetchUser = async () => {
+    const fetchUserAndNotifications = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const { data } = await supabase
+        // Fetch User Info
+        const { data: member } = await supabase
           .from('members')
-          .select('full_name')
+          .select('id, full_name')
           .eq('email', session.user.email)
           .maybeSingle();
-        if (data) setUserName(data.full_name);
+        
+        if (member) {
+          setUserName(member.full_name);
+          
+          // Fetch Notifications
+          const { data: notifs } = await supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_id', member.id)
+            .order('created_at', { ascending: false });
+          
+          if (notifs) setNotifications(notifs);
+        }
       }
     };
-    fetchUser();
+    fetchUserAndNotifications();
   }, []);
 
   const menuGroups = {
     ADMIN: [
       { name: 'ओवरव्यू', icon: LayoutDashboard, href: '/dashboard/admin' },
       { name: 'यूजर मैनेजमेंट', icon: Users, href: '/dashboard/admin/users' },
+      { name: 'रेफरल ट्री', icon: Share2, href: '/dashboard/admin/referrals' },
       { name: 'शाखा प्रबंधन', icon: Building2, href: '/dashboard/admin/branches' },
       { name: 'बल्क अपलोड', icon: Upload, href: '/dashboard/admin/bulk-upload' },
       { name: 'दान प्रबंधन', icon: IndianRupee, href: '/dashboard/admin/donations' },
@@ -227,10 +243,45 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-6">
-            <button className="relative p-3 bg-white/5 rounded-xl text-white/40 hover:text-white transition-all">
-              <Bell size={20} />
-              <span className="absolute top-3 right-3 w-2 h-2 bg-saffron rounded-full border-2 border-black"></span>
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-3 bg-white/5 rounded-xl text-white/40 hover:text-white transition-all"
+              >
+                <Bell size={20} />
+                {notifications.some(n => !n.is_read) && (
+                  <span className="absolute top-3 right-3 w-2 h-2 bg-saffron rounded-full border-2 border-black"></span>
+                )}
+              </button>
+
+              <AnimatePresence>
+                {showNotifications && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-4 w-80 bg-[#1A1A1A] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-[100]"
+                  >
+                    <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-white/40">सूचनाएं (Notifications)</span>
+                      <button className="text-[9px] font-bold text-saffron uppercase">सभी देखें</button>
+                    </div>
+                    <div className="max-h-96 overflow-y-auto custom-scrollbar">
+                      {notifications.length === 0 ? (
+                        <div className="p-10 text-center text-white/20 text-[9px] font-black uppercase tracking-widest">कोई सूचना नहीं</div>
+                      ) : notifications.map((n, i) => (
+                        <div key={i} className={`p-5 border-b border-white/5 hover:bg-white/[0.02] transition-all cursor-pointer ${!n.is_read ? 'bg-saffron/5' : ''}`}>
+                          <p className="text-[10px] font-bold text-white mb-1">{n.title}</p>
+                          <p className="text-[9px] text-white/40 leading-relaxed">{n.message}</p>
+                          <p className="text-[8px] text-white/20 mt-2 uppercase">{new Date(n.created_at).toLocaleDateString()}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            
             <div className="flex items-center gap-4 pl-6 border-l border-white/10">
               <div className="text-right hidden sm:block">
                 <p className="text-[10px] font-black text-white uppercase tracking-widest">{userName || (internalUserRole === 'ADMIN' ? 'एडमिन' : 'श्री राम भक्त')}</p>
