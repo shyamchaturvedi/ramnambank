@@ -3,7 +3,7 @@ ALTER TABLE members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE branches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE donations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE inventory_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE inventory_requests ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE inventory_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE system_settings ENABLE ROW LEVEL SECURITY;
 
 -- 1. Members Policies
@@ -49,11 +49,13 @@ CREATE POLICY "Admins manage inventory logs" ON inventory_logs
 FOR ALL TO authenticated
 USING (auth.jwt() ->> 'role' = 'ADMIN');
 
+/*
 CREATE POLICY "Branches see their own logs" ON inventory_logs
 FOR SELECT TO authenticated
 USING (branch_id IN (
   SELECT id FROM branches WHERE manager_id = auth.uid()
 ));
+*/
 
 -- 5. System Settings
 CREATE POLICY "Admins manage settings" ON system_settings
