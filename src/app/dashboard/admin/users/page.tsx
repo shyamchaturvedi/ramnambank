@@ -24,6 +24,7 @@ export default function UserManagementPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const { role: currentUserRole } = useRole();
@@ -44,6 +45,12 @@ export default function UserManagementPage() {
   React.useEffect(() => {
     fetchUsersAndBranches();
   }, []);
+
+  const filteredUsers = (users || []).filter(u => 
+    u.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.membership_id?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,6 +137,8 @@ export default function UserManagementPage() {
                  <input 
                    type="text" 
                    placeholder="नाम, ईमेल या आईडी से खोजें..." 
+                   value={searchTerm}
+                   onChange={(e) => setSearchTerm(e.target.value)}
                    className="w-full bg-black/40 border border-white/10 rounded-2xl py-3 pl-12 pr-6 text-sm outline-none focus:border-saffron/50 transition-all"
                  />
               </div>
@@ -154,9 +163,9 @@ export default function UserManagementPage() {
                   <tbody className="divide-y divide-white/5">
                     {isLoading ? (
                        <tr><td colSpan={5} className="px-8 py-20 text-center text-white/20 text-[10px] font-black uppercase tracking-widest">डेटा लोड हो रहा है...</td></tr>
-                    ) : users.length === 0 ? (
+                    ) : filteredUsers.length === 0 ? (
                        <tr><td colSpan={5} className="px-8 py-20 text-center text-white/20 text-[10px] font-black uppercase tracking-widest">कोई यूजर नहीं मिला</td></tr>
-                    ) : users.map((user) => (
+                    ) : filteredUsers.map((user) => (
                        <tr key={user.id} className="group hover:bg-white/[0.02] transition-all">
                           <td className="px-8 py-6">
                              <div className="flex items-center gap-4">

@@ -182,7 +182,7 @@ export const getUsers = async () => {
   try {
     const { data, error } = await supabase
       .from('members')
-      .select('*, branches(name)')
+      .select('*')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];
