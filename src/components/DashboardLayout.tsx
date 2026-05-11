@@ -26,7 +26,8 @@ import {
   Building2,
   Share2,
   Calendar,
-  Zap
+  Zap,
+  Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
