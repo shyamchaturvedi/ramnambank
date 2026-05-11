@@ -20,7 +20,7 @@ export default function ProfilePage() {
                const { data: member, error } = await supabase
                   .from('members')
                   .select('*')
-                  .ilike('email', session.user.email)
+                  .ilike('email', session.user.email || '')
                   .maybeSingle();
 
                if (error) console.error('Supabase error:', error);
