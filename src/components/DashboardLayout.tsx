@@ -132,15 +132,14 @@ export default function DashboardLayout({
       { name: 'बल्क अपलोड', icon: Upload, href: '/dashboard/admin/bulk-upload' },
       { name: 'दान प्रबंधन', icon: IndianRupee, href: '/dashboard/admin/donations' },
       { name: 'संग्रह एवं सत्यापन', icon: CheckCircle2, href: '/dashboard/volunteer/verify' },
-      { name: 'शाखा इन्वेंटरी', icon: Box, href: '/dashboard/branch/inventory' },
-      { name: 'आध्यात्मिक लेजर', icon: FileSearch, href: '/dashboard/devotee/ledger' },
+      { name: 'ग्लोबल स्टॉक कंट्रोल', icon: Box, href: '/dashboard/admin/inventory' },
       { name: 'मास्टर सेटिंग्स', icon: Settings, href: '/dashboard/admin/settings' },
     ],
     BRANCH_MANAGER: [
       { name: 'शाखा डैशबोर्ड', icon: LayoutDashboard, href: '/dashboard/branch/details' },
       { name: 'मेरे भक्त', icon: Users, href: '/dashboard/admin/users' },
       { name: 'मेरी शाखा', icon: Building2, href: '/dashboard/branch/details' },
-      { name: 'स्टॉक प्रबंधन', icon: Box, href: '/dashboard/branch/inventory' },
+      { name: 'मेरी शाखा का स्टॉक', icon: Box, href: '/dashboard/branch/inventory' },
     ],
     VOLUNTEER: [
       { name: 'एंट्री पैनल', icon: LayoutDashboard, href: '/dashboard/volunteer/verify' },
