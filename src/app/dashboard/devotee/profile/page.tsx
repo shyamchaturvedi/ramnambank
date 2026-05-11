@@ -73,6 +73,38 @@ export default function ProfilePage() {
       fetchUserData();
    }, []);
 
+   const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdating(true);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { error } = await supabase
+        .from('members')
+        .update({
+          full_name: formData.name,
+          mobile_number: formData.mobile,
+          district: formData.address.split(',')[0]?.trim() || '',
+          state: formData.address.split(',')[1]?.trim() || ''
+        })
+        .eq('email', session.user.email);
+
+      if (!error) {
+        setUserData({ ...userData, name: formData.name, mobile: formData.mobile, address: formData.address });
+        setIsEditModalOpen(false);
+        alert('प्रोफ़ाइल अपडेट हो गई!');
+      } else {
+        alert('Error: ' + error.message);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
    if (isLoading) {
       return <div className="h-96 flex items-center justify-center text-saffron uppercase font-black tracking-widest text-xs animate-pulse">डेटा लोड हो रहा है...</div>;
    }
