@@ -67,7 +67,7 @@ export default function MembershipPage() {
   useEffect(() => {
     const loadInitialData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+      if (session && session.user.email) {
         const { data: member } = await supabase
           .from('members')
           .select('id')
