@@ -5,6 +5,8 @@ import { Mail, MapPin, Edit3, Shield, Calendar } from 'lucide-react';
 import DigitalIDCard from '@/components/DigitalIDCard';
 import { supabase } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
 export default function ProfilePage() {
    const [userData, setUserData] = useState<any>(null);
    const [isLoading, setIsLoading] = useState(true);
@@ -14,13 +16,17 @@ export default function ProfilePage() {
          try {
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
+               console.log('Fetching profile for:', session.user.email);
                const { data: member, error } = await supabase
                   .from('members')
-                  .select('*, branches(name)')
-                  .eq('email', session.user.email)
+                  .select('*')
+                  .ilike('email', session.user.email)
                   .maybeSingle();
 
+               if (error) console.error('Supabase error:', error);
+
                if (member) {
+                  console.log('Member found:', member.full_name);
                   setUserData({
                      name: member.full_name,
                      role: member.role || 'DEVOTEE',
