@@ -31,7 +31,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        if (session) {
+        if (session && session.user.email) {
           // 1. Check Metadata
           let userRole = session.user.user_metadata?.role;
           
