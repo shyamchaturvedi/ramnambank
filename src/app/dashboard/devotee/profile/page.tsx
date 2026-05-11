@@ -1,18 +1,22 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Mail, MapPin, Edit3, Shield, Calendar, X } from 'lucide-react';
+import { Mail, MapPin, Edit3, Shield, Calendar, X, CheckCircle, User, Award, CheckCircle2, BellRing } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import DigitalIDCard from '@/components/DigitalIDCard';
 import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
 export default function ProfilePage() {
+   const router = useRouter();
    const [userData, setUserData] = useState<any>(null);
    const [isLoading, setIsLoading] = useState(true);
    const [totalNames, setTotalNames] = useState(0);
    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
    const [isUpdating, setIsUpdating] = useState(false);
+   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
    const [formData, setFormData] = useState({
       name: '',
       mobile: '',
@@ -44,6 +48,8 @@ export default function ProfilePage() {
                      email: member.email,
                      mobile: member.mobile_number,
                      address: `${member.district || ''}, ${member.state || ''}`.replace(/^, /, ''),
+                     membership_type: member.membership_type || 'REGULAR',
+                     is_overdue: !!member.is_overdue
                   });
                   setFormData({
                      name: member.full_name,
@@ -93,8 +99,26 @@ export default function ProfilePage() {
 
       if (!error) {
         setUserData({ ...userData, name: formData.name, mobile: formData.mobile, address: formData.address });
+        
+        // Send a test notification to prove Real-time
+        console.log('Sending notification to user:', userData.id);
+        const { data: notifData, error: notifError } = await supabase.from('notifications').insert([{
+          user_id: userData.id,
+          title: 'प्रोफ़ाइल अपडेट',
+          message: 'आपकी प्रोफाइल सफलतापूर्वक अपडेट कर दी गई है।',
+          created_at: new Date().toISOString(),
+          is_read: false
+        }]).select();
+
+        if (notifError) {
+          console.error('Notification Error:', notifError);
+        } else {
+          console.log('Notification sent successfully:', notifData);
+        }
+
         setIsEditModalOpen(false);
-        alert('प्रोफ़ाइल अपडेट हो गई!');
+        setToast({ show: true, message: 'प्रोफ़ाइल सफलतापूर्वक अपडेट हो गई!', type: 'success' });
+        setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 5000);
       } else {
         alert('Error: ' + error.message);
       }
@@ -127,11 +151,15 @@ export default function ProfilePage() {
                   </div>
                </div>
                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4">
                      <h2 className="text-4xl font-black font-serif gold-text">{userData.name}</h2>
-                     <span className="px-3 py-1 bg-sacred-red/20 text-sacred-red text-[8px] font-black rounded-full uppercase tracking-widest border border-sacred-red/20">{userData.role}</span>
+                     <span className="px-4 py-1.5 bg-saffron/10 text-saffron text-[9px] font-black rounded-full uppercase tracking-widest border border-saffron/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+                        {userData.membership_type === 'REGULAR' ? 'साधारण सदस्य' : 
+                         userData.membership_type === 'LIFE' ? 'आजीवन सदस्य' : 
+                         userData.membership_type || 'साधारण सदस्य'}
+                     </span>
                   </div>
-                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.4em]">सदस्यता आईडी: {userData.id}</p>
+                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.4em]">सदस्यता आईडी: {userData.membership_id || userData.id}</p>
                </div>
             </div>
             <button 
@@ -141,6 +169,19 @@ export default function ProfilePage() {
                <Edit3 size={16} /> प्रोफाइल एडिट करें
             </button>
          </div>
+
+         {userData.is_overdue && (
+           <div className="p-6 bg-red-500/5 border border-red-500/20 rounded-[2rem] animate-pulse">
+              <div className="flex flex-col md:flex-row items-center gap-6 text-red-500">
+                 <div className="p-4 bg-red-500/20 rounded-2xl shrink-0"><BellRing size={24} /></div>
+                 <div className="space-y-1 text-center md:text-left">
+                    <p className="text-xs font-black uppercase tracking-widest">वार्षिक रखरखाव शुल्क लंबित है!</p>
+                    <p className="text-[10px] font-bold text-white/40 uppercase">365 दिन पूरे हो चुके हैं। नई पुस्तिका प्राप्त करने के लिए ₹108 का वार्षिक शुल्क जमा करें।</p>
+                 </div>
+                 <button onClick={() => router.push('/dashboard/devotee/membership')} className="md:ml-auto px-8 py-4 bg-red-500 text-black text-[10px] font-black uppercase rounded-2xl shadow-xl hover:scale-105 transition-all">अभी भुगतान करें</button>
+              </div>
+           </div>
+         )}
 
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             <div className="lg:col-span-2 space-y-8">
@@ -193,11 +234,28 @@ export default function ProfilePage() {
                <div className="premium-card p-8 bg-sacred-red/5 border border-sacred-red/20 space-y-4 w-full">
                   <p className="text-[10px] font-black text-sacred-red uppercase tracking-widest">महत्वपूर्ण सूचना</p>
                   <p className="text-xs text-white/60 leading-loose">
-                     कृपया अपनी पुस्तिका जमा करने की तारीख (15 जून) याद रखें।
+                     कृपया अपनी पुस्तिका पूर्ण होने पर अपनी निकटतम शाखा में जमा करें। कोई निश्चित समय सीमा नहीं है।
                   </p>
                </div>
             </div>
          </div>
+
+         {/* Toast Notification */}
+         <AnimatePresence>
+            {toast.show && (
+               <motion.div 
+                  initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 50, scale: 0.9 }}
+                  className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 bg-black/80 backdrop-blur-xl border border-saffron/30 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-4"
+               >
+                  <div className="w-8 h-8 rounded-full bg-saffron/20 flex items-center justify-center text-saffron">
+                     <CheckCircle size={18} />
+                  </div>
+                  <p className="text-xs font-black uppercase tracking-widest text-white">{toast.message}</p>
+               </motion.div>
+            )}
+         </AnimatePresence>
 
          {/* Edit Profile Modal */}
          {isEditModalOpen && (

@@ -62,7 +62,7 @@ export default function CentralLogin() {
       
       // Try Email
       if (!memberRecord && cleanEmail.includes('@')) {
-        const { data: byEmail } = await supabase.from('members').select('email, role, full_name, membership_id, password').eq('email', cleanEmail).maybeSingle();
+        const { data: byEmail } = await supabase.from('members').select('email, role, full_name, membership_id, password').ilike('email', cleanEmail).maybeSingle();
         if (byEmail) memberRecord = byEmail;
       }
 

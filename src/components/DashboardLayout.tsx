@@ -24,7 +24,9 @@ import {
   IndianRupee,
   Upload,
   Building2,
-  Share2
+  Share2,
+  Calendar,
+  Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
@@ -47,23 +49,41 @@ export default function DashboardLayout({
   const [showNotifications, setShowNotifications] = useState(false);
   const { role: internalUserRole } = useRole();
 
+  const [profileData, setProfileData] = useState<any>(null);
+  const [pendingRequest, setPendingRequest] = useState<any>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+
   // 1. Mounted Check & User Data Fetch
   useEffect(() => {
     setMounted(true);
     const fetchUserAndNotifications = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Fetch User Info
-        const { data: member } = await supabase
+      if (session && session.user.email) {
+        console.log("SESSION FOUND:", session.user.email);
+        const { data: member, error: memberError } = await supabase
           .from('members')
-          .select('id, full_name')
-          .eq('email', session.user.email)
+          .select('*')
+          .ilike('email', session.user.email.trim())
           .maybeSingle();
+        
+        if (memberError) console.error("MEMBER FETCH ERROR:", memberError);
+        console.log("MEMBER FOUND:", member);
         
         if (member) {
           setUserName(member.full_name);
+          setProfileData(member);
+
+          // Check for pending membership request
+          const { data: pendingReq } = await supabase
+            .from('membership_requests')
+            .select('*')
+            .eq('user_id', member.id)
+            .eq('status', 'PENDING')
+            .maybeSingle();
           
-          // Fetch Notifications
+          if (pendingReq) setPendingRequest(pendingReq);
+          
+          // Initial Fetch for Notifications
           const { data: notifs } = await supabase
             .from('notifications')
             .select('*')
@@ -71,16 +91,41 @@ export default function DashboardLayout({
             .order('created_at', { ascending: false });
           
           if (notifs) setNotifications(notifs);
+
+          // Real-time Subscription
+          const channel = supabase
+            .channel(`notifications_${member.id}`)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload) => {
+               if (payload.new.user_id === member.id) {
+                  setNotifications(prev => [payload.new, ...prev]);
+               }
+            })
+            .subscribe();
+
+          setIsLoadingProfile(false);
+          return () => supabase.removeChannel(channel);
+        } else {
+          console.warn("NO MEMBER RECORD FOUND FOR EMAIL:", session.user.email);
+          setIsLoadingProfile(false);
         }
       }
     };
     fetchUserAndNotifications();
   }, []);
 
+  const isDevoteeBlocked = 
+    pathname.startsWith('/dashboard/devotee') && 
+    pathname !== '/dashboard/devotee/membership' &&
+    internalUserRole !== 'ADMIN' &&
+    (!['SPECIAL_LIFE', 'LIFE', 'BANK_LIFE'].includes(profileData?.membership_type?.trim()?.toUpperCase() || ''));
+
+  console.log("DEBUG - Membership Type:", profileData?.membership_type, "isBlocked:", isDevoteeBlocked);
+
   const menuGroups = {
     ADMIN: [
       { name: 'ओवरव्यू', icon: LayoutDashboard, href: '/dashboard/admin' },
       { name: 'यूजर मैनेजमेंट', icon: Users, href: '/dashboard/admin/users' },
+      { name: 'सदस्यता रिक्वेस्ट', icon: Award, href: '/dashboard/admin/membership-requests' },
       { name: 'रेफरल ट्री', icon: Share2, href: '/dashboard/admin/referrals' },
       { name: 'शाखा प्रबंधन', icon: Building2, href: '/dashboard/admin/branches' },
       { name: 'बल्क अपलोड', icon: Upload, href: '/dashboard/admin/bulk-upload' },
@@ -92,7 +137,7 @@ export default function DashboardLayout({
     ],
     BRANCH_MANAGER: [
       { name: 'शाखा डैशबोर्ड', icon: LayoutDashboard, href: '/dashboard/branch/details' },
-      { name: 'मेरे भक्त', icon: Users, href: '/dashboard/admin/users' }, // Manager might see filtered users
+      { name: 'मेरे भक्त', icon: Users, href: '/dashboard/admin/users' },
       { name: 'मेरी शाखा', icon: Building2, href: '/dashboard/branch/details' },
       { name: 'स्टॉक प्रबंधन', icon: Box, href: '/dashboard/branch/inventory' },
     ],
@@ -103,6 +148,7 @@ export default function DashboardLayout({
     DEVOTEE: [
       { name: 'मेरा संचय', icon: LayoutDashboard, href: '/dashboard/devotee' },
       { name: 'मेरा प्रोफाइल', icon: User, href: '/dashboard/devotee/profile' },
+      { name: 'सदस्यता', icon: Award, href: '/dashboard/devotee/membership' },
       { name: 'मेरा लेजर', icon: FileSearch, href: '/dashboard/devotee/ledger' },
     ]
   };
@@ -113,21 +159,9 @@ export default function DashboardLayout({
   useEffect(() => {
     if (mounted && internalUserRole) {
       const path = pathname;
-      
-      // Admin protection
-      if (path.startsWith('/dashboard/admin') && internalUserRole !== 'ADMIN') {
-        router.replace('/dashboard');
-      }
-      
-      // Branch Manager protection
-      if (path.startsWith('/dashboard/branch') && !['ADMIN', 'BRANCH_MANAGER'].includes(internalUserRole)) {
-        router.replace('/dashboard');
-      }
-
-      // Volunteer protection
-      if (path.startsWith('/dashboard/volunteer') && !['ADMIN', 'BRANCH_MANAGER', 'VOLUNTEER'].includes(internalUserRole)) {
-        router.replace('/dashboard');
-      }
+      if (path.startsWith('/dashboard/admin') && internalUserRole !== 'ADMIN') router.replace('/dashboard');
+      if (path.startsWith('/dashboard/branch') && !['ADMIN', 'BRANCH_MANAGER'].includes(internalUserRole)) router.replace('/dashboard');
+      if (path.startsWith('/dashboard/volunteer') && !['ADMIN', 'BRANCH_MANAGER', 'VOLUNTEER'].includes(internalUserRole)) router.replace('/dashboard');
     }
   }, [mounted, internalUserRole, pathname, router]);
 
@@ -165,7 +199,7 @@ export default function DashboardLayout({
 
           <div className="flex items-center gap-4 mb-12">
              <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-saffron/20 sacred-glow">
-                <Image src="/logo.png" alt="Logo" fill className="object-cover" />
+                <Image src="/logo.png" alt="Logo" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover scale-125" priority />
              </div>
              <h1 className="text-lg font-bold font-serif gold-text tracking-widest uppercase">राम नाम बैंक</h1>
           </div>
@@ -258,25 +292,53 @@ export default function DashboardLayout({
               <AnimatePresence>
                 {showNotifications && (
                   <motion.div 
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    initial={{ opacity: 0, y: 15, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-4 w-80 bg-[#1A1A1A] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-[100]"
+                    exit={{ opacity: 0, y: 15, scale: 0.95 }}
+                    className="absolute right-0 mt-6 w-96 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100] sacred-glow"
                   >
-                    <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-white/40">सूचनाएं (Notifications)</span>
-                      <button className="text-[9px] font-bold text-saffron uppercase">सभी देखें</button>
+                    <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                       <div className="flex items-center gap-3">
+                          <Bell size={14} className="text-saffron" />
+                          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">सूचनाएं (Notifications)</span>
+                       </div>
+                       {notifications.length > 0 && (
+                          <button className="text-[9px] font-black text-saffron uppercase tracking-widest hover:text-white transition-colors">सभी देखें</button>
+                       )}
                     </div>
-                    <div className="max-h-96 overflow-y-auto custom-scrollbar">
+                    
+                    <div className="max-h-[450px] overflow-y-auto custom-scrollbar">
                       {notifications.length === 0 ? (
-                        <div className="p-10 text-center text-white/20 text-[9px] font-black uppercase tracking-widest">कोई सूचना नहीं</div>
-                      ) : notifications.map((n, i) => (
-                        <div key={i} className={`p-5 border-b border-white/5 hover:bg-white/[0.02] transition-all cursor-pointer ${!n.is_read ? 'bg-saffron/5' : ''}`}>
-                          <p className="text-[10px] font-bold text-white mb-1">{n.title}</p>
-                          <p className="text-[9px] text-white/40 leading-relaxed">{n.message}</p>
-                          <p className="text-[8px] text-white/20 mt-2 uppercase">{new Date(n.created_at).toLocaleDateString()}</p>
+                        <div className="py-20 px-10 text-center space-y-4">
+                           <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto opacity-20">
+                              <Bell size={24} />
+                           </div>
+                           <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">कोई नई सूचना नहीं</p>
                         </div>
-                      ))}
+                      ) : (
+                        <div className="divide-y divide-white/5">
+                          {notifications.map((n, i) => (
+                            <motion.div 
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: i * 0.1 }}
+                              key={i} 
+                              className={`p-6 hover:bg-white/[0.03] transition-all cursor-pointer relative group ${!n.is_read ? 'bg-saffron/[0.03]' : ''}`}
+                            >
+                              {!n.is_read && <div className="absolute left-0 top-0 bottom-0 w-1 bg-saffron shadow-[0_0_15px_rgba(245,158,11,0.5)]"></div>}
+                              <div className="flex justify-between items-start gap-4">
+                                 <div className="space-y-1">
+                                    <p className="text-xs font-black text-white group-hover:text-saffron transition-colors">{n.title}</p>
+                                    <p className="text-[10px] text-white/40 leading-relaxed font-medium">{n.message}</p>
+                                    <p className="text-[8px] text-white/20 mt-3 font-bold uppercase tracking-widest flex items-center gap-2">
+                                       <Calendar size={10} /> {new Date(n.created_at).toLocaleDateString('hi-IN', { day: 'numeric', month: 'long' })}
+                                    </p>
+                                 </div>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 )}
@@ -297,8 +359,54 @@ export default function DashboardLayout({
 
         {/* Dynamic Page Content */}
         <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar">
-           <div className="max-w-7xl mx-auto h-full">
-              {children}
+           <div className="max-w-7xl mx-auto h-full relative">
+              {isLoadingProfile ? (
+                <div className="flex flex-col items-center justify-center h-[60vh] space-y-4">
+                  <div className="w-16 h-16 border-4 border-saffron/20 border-t-saffron rounded-full animate-spin"></div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-saffron/40">प्रोफाइल लोड हो रहा है...</p>
+                </div>
+              ) : isDevoteeBlocked ? (
+                <div className="flex items-center justify-center min-h-[70vh]">
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="premium-card p-10 md:p-16 max-w-xl border-red-500/30 space-y-8 text-center bg-red-500/[0.02]"
+                  >
+                    <div className={`w-24 h-24 ${pendingRequest ? 'bg-amber-500/20 text-amber-500' : 'bg-red-500/20 text-red-500'} rounded-full flex items-center justify-center mx-auto ${!pendingRequest && 'animate-bounce'}`}>
+                      {pendingRequest ? <Clock size={48} /> : <Zap size={48} />}
+                    </div>
+                    <div className="space-y-4">
+                      <h2 className="text-3xl font-black text-white uppercase tracking-widest">
+                        {pendingRequest ? "वेरिफिकेशन लंबित है" : "सदस्यता अनिवार्य है"}
+                      </h2>
+                      <p className="text-sm text-white/60 font-bold uppercase leading-relaxed">
+                        {pendingRequest 
+                          ? `आपका भुगतान (UTR: ${pendingRequest.transaction_id}) वेरिफिकेशन के लिए एडमिन के पास है। कृपया धैर्य रखें।`
+                          : !profileData?.membership_type 
+                            ? "पोर्टल की सेवाओं का उपयोग करने के लिए कृपया राम नाम बैंक की सदस्यता लें।" 
+                            : "आपका वार्षिक रखरखाव शुल्क (₹108) लंबित है। सेवाओं को जारी रखने के लिए भुगतान पूर्ण करें।"}
+                      </p>
+                    </div>
+                    {!pendingRequest && (
+                      <button 
+                        onClick={() => router.push('/dashboard/devotee/membership')}
+                        className="w-full py-5 bg-red-500 text-black font-black uppercase text-xs rounded-2xl shadow-[0_10px_20px_rgba(239,68,68,0.3)] hover:scale-105 transition-all"
+                      >
+                        {!profileData?.membership_type ? "अभी सदस्यता लें" : "अभी नवीनीकृत करें"}
+                      </button>
+                    )}
+                    {pendingRequest && (
+                      <div className="pt-4">
+                        <div className="inline-block px-6 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[10px] font-black text-amber-500 uppercase tracking-widest">
+                          STATUS: AWAITING ADMIN APPROVAL
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                </div>
+              ) : (
+                children
+              )}
            </div>
         </div>
       </motion.main>

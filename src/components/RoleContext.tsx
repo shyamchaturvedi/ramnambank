@@ -40,7 +40,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
             const { data: member } = await supabase
               .from('members')
               .select('role')
-              .eq('email', session.user.email)
+              .ilike('email', session.user.email.trim())
               .maybeSingle();
             
             if (member?.role) {

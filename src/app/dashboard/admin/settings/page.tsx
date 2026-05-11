@@ -31,6 +31,7 @@ export default function SettingsPage() {
         if (settings) {
           setMaintenanceMode(!!settings.maintenance_mode);
           setRegEnabled(settings.registration_enabled !== false);
+          if (settings.upi_id) setUpiId(settings.upi_id);
         }
       } catch (e) {
         console.error("Failed to load settings:", e);
@@ -39,6 +40,17 @@ export default function SettingsPage() {
     loadSettings();
   }, []);
 
+  const handleSave = async () => {
+    try {
+      await updateSetting('upi_id', upiId);
+      await updateSetting('maintenance_mode', maintenanceMode);
+      await updateSetting('registration_enabled', regEnabled);
+      alert('सेटिंग्स सुरक्षित कर दी गई हैं!');
+    } catch (e) {
+      alert('सेटिंग्स सुरक्षित करने में त्रुटि आई।');
+    }
+  };
+
   return (
     <div className="space-y-10 text-white pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -46,7 +58,10 @@ export default function SettingsPage() {
           <h2 className="text-3xl font-black font-serif uppercase gold-text">प्रशासनिक नियंत्रण (Master Controls)</h2>
           <p className="text-white/40 text-sm mt-1">बैंक की ग्लोबल सेटिंग्स और पेमेंट सिस्टम का प्रबंधन करें।</p>
         </div>
-        <button className="saffron-btn flex items-center gap-3 text-xs">
+        <button 
+          onClick={handleSave}
+          className="saffron-btn flex items-center gap-3 text-xs"
+        >
           <Save size={18} />
           परिवर्तन सुरक्षित करें
         </button>

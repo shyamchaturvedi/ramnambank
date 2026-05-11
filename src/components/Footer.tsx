@@ -97,7 +97,7 @@ export default function Footer() {
         <div className="py-10 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-8">
            <div className="flex items-center gap-6">
               <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-saffron/20 shadow-lg sacred-glow">
-                 <Image src="/logo.png" alt="Logo" fill className="object-cover" />
+                 <Image src="/logo.png" alt="Logo" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" />
               </div>
               <div>
                  <p className="text-[10px] font-black uppercase tracking-[0.2em] gold-text leading-none">श्री राम नाम महाधन संचय बैंक</p>
