@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 export default function ProfilePage() {
    const [userData, setUserData] = useState<any>(null);
    const [isLoading, setIsLoading] = useState(true);
+   const [totalNames, setTotalNames] = useState(0);
 
    useEffect(() => {
       const fetchUserData = async () => {
@@ -36,6 +37,17 @@ export default function ProfilePage() {
                      mobile: member.mobile_number,
                      address: `${member.block || ''}, ${member.district || ''}, ${member.state || ''}`.replace(/^, /, ''),
                   });
+
+                  // Fetch Total Spiritual Wealth (Dynamic Progress)
+                  const { data: submissions } = await supabase
+                    .from('booklet_submissions')
+                    .select('quantity')
+                    .eq('user_id', member.id);
+                  
+                  if (submissions) {
+                    const total = submissions.reduce((sum, s) => sum + (Number(s.quantity) || 0), 0);
+                    setTotalNames(total);
+                  }
                }
             }
          } catch (err) {
@@ -112,11 +124,17 @@ export default function ProfilePage() {
                   <div className="space-y-6">
                      <div className="flex justify-between items-center text-xs font-bold uppercase tracking-widest">
                         <span>अगला लक्ष्य (10 लाख नाम)</span>
-                        <span className="text-saffron">75% पूर्ण</span>
+                        <span className="text-saffron">{Math.min(100, Math.floor((totalNames / 1000000) * 100))}% पूर्ण</span>
                      </div>
                      <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden p-0.5 border border-white/10">
-                        <div className="h-full bg-saffron rounded-full sacred-glow w-[75%] transition-all duration-1000"></div>
+                        <div 
+                          className="h-full bg-saffron rounded-full sacred-glow transition-all duration-1000"
+                          style={{ width: `${Math.min(100, Math.floor((totalNames / 1000000) * 100))}%` }}
+                        ></div>
                      </div>
+                     <p className="text-[10px] text-white/30 uppercase font-black tracking-widest mt-2">
+                        कुल संचय: {totalNames.toLocaleString()} / 1,000,000
+                     </p>
                   </div>
                </div>
             </div>
