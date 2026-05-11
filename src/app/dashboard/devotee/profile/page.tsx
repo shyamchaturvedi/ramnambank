@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Mail, MapPin, Edit3, Shield, Calendar } from 'lucide-react';
+import { Mail, MapPin, Edit3, Shield, Calendar, X } from 'lucide-react';
 import DigitalIDCard from '@/components/DigitalIDCard';
 import { supabase } from '@/lib/supabase';
 
@@ -11,6 +11,13 @@ export default function ProfilePage() {
    const [userData, setUserData] = useState<any>(null);
    const [isLoading, setIsLoading] = useState(true);
    const [totalNames, setTotalNames] = useState(0);
+   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+   const [isUpdating, setIsUpdating] = useState(false);
+   const [formData, setFormData] = useState({
+      name: '',
+      mobile: '',
+      address: ''
+   });
 
    useEffect(() => {
       const fetchUserData = async () => {
@@ -29,13 +36,19 @@ export default function ProfilePage() {
                if (member) {
                   console.log('Member found:', member.full_name);
                   setUserData({
+                     id: member.id,
+                     membership_id: member.membership_id,
                      name: member.full_name,
                      role: member.role || 'DEVOTEE',
-                     id: member.membership_id,
                      branch: member.branches?.name || member.branch_code || 'मुख्य कार्यालय',
                      email: member.email,
                      mobile: member.mobile_number,
-                     address: `${member.block || ''}, ${member.district || ''}, ${member.state || ''}`.replace(/^, /, ''),
+                     address: `${member.district || ''}, ${member.state || ''}`.replace(/^, /, ''),
+                  });
+                  setFormData({
+                     name: member.full_name,
+                     mobile: member.mobile_number || '',
+                     address: `${member.district || ''}, ${member.state || ''}`.replace(/^, /, '')
                   });
 
                   // Fetch Total Spiritual Wealth (Dynamic Progress)
@@ -89,7 +102,10 @@ export default function ProfilePage() {
                   <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.4em]">सदस्यता आईडी: {userData.id}</p>
                </div>
             </div>
-            <button className="px-8 py-3 bg-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/10 flex items-center gap-2 hover:bg-white/10 transition-all">
+            <button 
+              onClick={() => setIsEditModalOpen(true)}
+              className="px-8 py-3 bg-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/10 flex items-center gap-2 hover:bg-white/10 transition-all"
+            >
                <Edit3 size={16} /> प्रोफाइल एडिट करें
             </button>
          </div>
@@ -150,6 +166,66 @@ export default function ProfilePage() {
                </div>
             </div>
          </div>
+
+         {/* Edit Profile Modal */}
+         {isEditModalOpen && (
+           <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-6">
+             <div className="bg-[#0A0A0A] border border-white/10 rounded-[2.5rem] w-full max-w-xl overflow-hidden animate-zoom-in">
+               <div className="p-10 space-y-8">
+                 <div className="flex items-center justify-between">
+                   <h3 className="text-2xl font-black font-serif uppercase gold-text">प्रोफाइल अपडेट करें</h3>
+                   <button onClick={() => setIsEditModalOpen(false)} className="text-white/20 hover:text-white transition-colors">
+                     <X size={24} />
+                   </button>
+                 </div>
+
+                 <form onSubmit={handleUpdateProfile} className="space-y-6">
+                   <div className="space-y-2">
+                     <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">पूरा नाम</label>
+                     <input 
+                       required 
+                       type="text" 
+                       value={formData.name} 
+                       onChange={e => setFormData({...formData, name: e.target.value})} 
+                       className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-saffron/50 text-white text-sm font-bold" 
+                     />
+                   </div>
+                   <div className="space-y-2">
+                     <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">मोबाइल नंबर</label>
+                     <input 
+                       required 
+                       type="tel" 
+                       value={formData.mobile} 
+                       onChange={e => setFormData({...formData, mobile: e.target.value})} 
+                       className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-saffron/50 text-white text-sm font-bold" 
+                     />
+                   </div>
+                   <div className="space-y-2">
+                     <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">पता (शहर, राज्य)</label>
+                     <input 
+                       required 
+                       placeholder="उदा: मथुरा, उत्तर प्रदेश"
+                       type="text" 
+                       value={formData.address} 
+                       onChange={e => setFormData({...formData, address: e.target.value})} 
+                       className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-saffron/50 text-white text-sm font-bold" 
+                     />
+                   </div>
+
+                   <div className="pt-4">
+                     <button 
+                       type="submit" 
+                       disabled={isUpdating}
+                       className="w-full saffron-btn py-5 flex items-center justify-center gap-3 font-black text-xs"
+                     >
+                       {isUpdating ? 'अपडेट हो रहा है...' : 'बदलाव सुरक्षित करें'}
+                     </button>
+                   </div>
+                 </form>
+               </div>
+             </div>
+           </div>
+         )}
       </div>
    );
 }
