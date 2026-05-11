@@ -60,10 +60,12 @@ export default function DigitalIDCard({ user }: IDCardProps) {
 
       {/* Details Grid */}
       <div className="relative z-10 px-10 pt-8 grid grid-cols-2 gap-6 border-t border-white/5 mt-8 mx-6">
-         <div className="space-y-1">
-            <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">सदस्यता आईडी</p>
-            <p className="text-[10px] font-mono font-bold text-white/80 tracking-tighter">{user.id}</p>
-         </div>
+          <div className="space-y-1">
+             <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">सदस्यता आईडी</p>
+             <p className="text-[10px] font-mono font-bold text-white/80 tracking-tighter">
+                {user.id.length > 10 ? user.id.substring(0, 8).toUpperCase() : user.id}
+             </p>
+          </div>
          <div className="space-y-1 text-right">
             <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">शाखा</p>
             <p className="text-[10px] font-bold text-white/80 truncate uppercase tracking-widest">{user.branch}</p>
