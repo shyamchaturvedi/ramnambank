@@ -39,11 +39,11 @@ export default function LedgerReportPage() {
                 .order('created_at', { ascending: false });
 
               if (data) {
-                const formatted = data.map(item => ({
+                const formatted = (data as any[]).map((item: any) => ({
                   date: new Date(item.created_at).toLocaleDateString('en-GB'),
                   branch: item.branches?.name || 'Unknown',
                   activity: 'राम नाम संचय',
-                  quantity: item.quantity.toLocaleString(),
+                  quantity: (item.quantity || 0).toLocaleString(),
                   type: item.status === 'VERIFIED' ? 'COLLECTION' : 'LOGISTICS',
                   user: item.status === 'VERIFIED' ? 'Verified' : 'Pending'
                 }));
