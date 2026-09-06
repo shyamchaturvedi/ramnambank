@@ -33,7 +33,7 @@ export default function AudioPlayer() {
         ref={audioRef} 
         src="/ram-song.mpeg" 
         loop 
-        preload="auto"
+        preload="none"
       />
       
       <div className="flex items-center gap-3 bg-black/40 backdrop-blur-2xl border border-saffron/20 p-2 rounded-2xl shadow-[0_10px_30px_rgba(255,153,51,0.1)] group hover:border-saffron/50 transition-all duration-500">
