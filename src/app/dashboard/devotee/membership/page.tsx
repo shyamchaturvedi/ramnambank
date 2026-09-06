@@ -9,30 +9,30 @@ import Image from 'next/image';
 const PLANS = [
   {
     id: 'special_life',
-    name: 'विशेष आजीवन सदस्य',
+    name: 'केन्द्रीय विशिष्ट आजीवन सदस्य',
     description: 'श्री जगन्नाथ ओड़िआ बाबा सेवा संस्थान का सर्वोच्च सम्मान',
-    amount: 21000,
+    amount: 21051,
     icon: Star,
     color: 'from-amber-400 to-orange-600',
-    features: ['विशिष्ट पहचान पत्र', 'संस्थान की कोर टीम में प्राथमिकता', 'वार्षिक उत्सवों में विशेष आमंत्रण', 'विशेष आध्यात्मिक मार्गदर्शन']
+    features: ['विशिष्ट पहचान पत्र (VIP Pass)', 'संस्थान की कोर कमेटी में स्थान', 'वार्षिक महाकुंभ में विशेष सम्मान', 'आजीवन आध्यात्मिक मार्गदर्शन']
   },
   {
     id: 'institute_life',
-    name: 'आजीवन सदस्य',
+    name: 'केन्द्रीय आजीवन सदस्य',
     description: 'श्री जगन्नाथ ओड़िआ बाबा सेवा संस्थान की स्थाई सदस्यता',
-    amount: 2100,
+    amount: 2151,
     icon: Award,
     color: 'from-saffron to-orange-500',
-    features: ['आजीवन सदस्यता कार्ड', 'सभी आयोजनों में भागीदारी', 'संस्थान की मासिक पत्रिका', 'सदस्यता प्रमाण पत्र']
+    features: ['आजीवन सदस्यता पास', 'सभी आयोजनों में सम्मानजनक प्रवेश', 'संस्थान की त्रैमासिक पत्रिका', 'सदस्यता प्रमाण पत्र']
   },
   {
     id: 'bank_life',
-    name: 'बैंक आजीवन सदस्य',
-    description: 'श्री राम नाम संचय बैंक की स्थाई सदस्यता',
+    name: 'श्री राम नाम लिखन सदस्य',
+    description: 'श्री राम नाम महा धन संचय बैंक की नियमित लिखन सदस्यता',
     amount: 360,
     icon: Zap,
     color: 'from-orange-400 to-saffron',
-    features: ['डिजिटल आजीवन कार्ड', '₹108 वार्षिक रखरखाव शुल्क (365 दिन बाद)', 'बैंक गतिविधियों की विशेष सूचना', 'सदस्यता बैच']
+    features: ['डिजिटल आजीवन कार्ड / पास', 'निःशुल्क श्री राम नाम अर्चना पुस्तिका', 'सनातनी लिखन सामग्री किट', 'वार्षिक नवीनीकरण सुविधा']
   }
 ];
 
@@ -42,7 +42,7 @@ export default function MembershipPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [adminUpi, setAdminUpi] = useState('shreejagannath@upi');
+  const [adminUpi, setAdminUpi] = useState('8090525961m@pnb');
   const [history, setHistory] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
@@ -164,21 +164,33 @@ export default function MembershipPage() {
             className="premium-card p-10 md:p-16 border-saffron/30 bg-saffron/[0.02]"
           >
              <div className="flex flex-col lg:flex-row gap-16 items-center">
-                <div className="lg:w-1/3 text-center space-y-6">
-                   <div className="p-4 bg-white rounded-3xl inline-block shadow-2xl">
-                      <div className="w-64 h-64 bg-white flex flex-col items-center justify-center p-2">
-                         <img 
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`upi://pay?pa=${adminUpi}&pn=Shree Jagannath Odia Baba Sansthan&am=${selectedPlan.amount}&cu=INR`)}`}
-                            alt="Payment QR Code"
-                            className="w-full h-full object-contain"
-                         />
-                      </div>
-                   </div>
-                   <div className="space-y-2">
-                      <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">UPI ID (Copy & Pay)</p>
-                      <p className="text-2xl font-black text-saffron uppercase tracking-widest">{adminUpi}</p>
-                   </div>
-                </div>
+                 <div className="lg:w-1/3 text-center space-y-6">
+                    <div className="p-4 bg-white rounded-3xl inline-block shadow-2xl border-4 border-saffron/30">
+                       <div className="space-y-2 mb-3">
+                          <p className="text-[9px] font-black text-black/70 uppercase tracking-widest leading-tight">
+                             MERCHANT: SHRI JAGANNATH ODIA BABA SEWA SANSTHAN
+                          </p>
+                          <div className="inline-block bg-saffron text-black text-[9px] font-black uppercase px-3 py-0.5 rounded-full">
+                             SCAN & PAY
+                          </div>
+                       </div>
+                       <div className="w-64 h-64 bg-white flex flex-col items-center justify-center p-1 mx-auto">
+                          <img 
+                             src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`upi://pay?pa=${adminUpi}&pn=SHRI JAGANNATH ODIA BABA SEWA SANSTHAN&am=${selectedPlan.amount}&cu=INR`)}`}
+                             alt="Payment QR Code"
+                             className="w-full h-full object-contain"
+                          />
+                       </div>
+                       <p className="text-[11px] font-black text-black font-mono tracking-wider mt-2">
+                          UPI ID: {adminUpi}
+                       </p>
+                    </div>
+                    <div className="space-y-1">
+                       <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">बैंक विवरण (Bank Details)</p>
+                       <p className="text-xs font-bold text-white uppercase tracking-wider">पंजाब नेशनल बैंक (PNB)</p>
+                       <p className="text-sm font-black text-saffron uppercase tracking-widest">{adminUpi}</p>
+                    </div>
+                 </div>
 
                 <div className="flex-1 space-y-8 w-full">
                    <div className="space-y-4">
