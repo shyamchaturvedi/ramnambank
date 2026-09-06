@@ -220,7 +220,8 @@ function VerifyContent() {
               {/* Sanstha Footer */}
               <div className="border-t border-white/10 pt-4 text-center space-y-1 text-[10px] text-white/50">
                 <p className="font-serif font-black text-saffron text-xs">।। ॐ श्री रामचन्द्राय नमः ।।</p>
-                <p className="font-bold text-white/70">श्री जगन्नाथ ओड़िआ बाबा सेवा संस्थान, अयोध्या धाम (उ.प्र.)</p>
+                <p className="font-bold text-white/80">श्री जगन्नाथ ओड़िआ बाबा सेवा संस्थान</p>
+                <p className="text-white/60 text-[9px]">जगन्नाथ घाट, निकट-राज घाट, अयोध्या, उत्तर प्रदेश - 224123</p>
                 <p className="font-mono text-[9px] text-white/40">हेल्पलाइन: +91 8090525961, +91 9794640807</p>
               </div>
             </div>

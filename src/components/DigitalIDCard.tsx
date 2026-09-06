@@ -377,7 +377,10 @@ export default function DigitalIDCard({ user, showActions = true }: IDCardProps)
           <div className="border-t border-saffron/30 pt-2 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-2 text-[7.5px] sm:text-[8.5px] text-white/70">
             <div className="space-y-0.5">
               <p className="text-white font-bold uppercase tracking-tight text-[8px] sm:text-[9px]">
-                🏛️ श्री जगन्नाथ ओड़िआ बाबा सेवा संस्थान, अयोध्या धाम (उ.प्र.)
+                🏛️ श्री जगन्नाथ ओड़िआ बाबा सेवा संस्थान
+              </p>
+              <p className="text-white/80 text-[7px] sm:text-[8px]">
+                जगन्नाथ घाट, निकट-राज घाट, अयोध्या (उ.प्र.) - 224123
               </p>
               <p className="text-saffron font-bold font-mono text-[8px] sm:text-[9px]">
                 📞 +91 8090525961, +91 9794640807
@@ -523,8 +526,9 @@ export default function DigitalIDCard({ user, showActions = true }: IDCardProps)
             {/* Back Contact Footer */}
             <div className="border-t border-amber-300 pt-1.5 flex justify-between items-end text-[6.5px] text-gray-700">
               <div className="space-y-0.5">
-                <p className="font-bold text-amber-950 uppercase text-[7px]">🏛️ श्री जगन्नाथ ओड़िआ बाबा सेवा संस्थान, अयोध्या धाम</p>
-                <p className="font-mono font-bold text-amber-900">📞 +91 8090525961, +91 9794640807</p>
+                <p className="font-bold text-amber-950 uppercase text-[7px]">🏛️ श्री जगन्नाथ ओड़िआ बाबा सेवा संस्थान</p>
+                <p className="text-[6.5px] text-gray-600">जगन्नाथ घाट, निकट-राज घाट, अयोध्या (उ.प्र.) - 224123</p>
+                <p className="font-mono text-[7px] text-saffron font-bold mt-0.5">📞 +91 8090525961, +91 9794640807</p>
                 <p className="lowercase text-gray-600">✉️ odiamathayodhya9794@gmail.com</p>
               </div>
               <div className="text-right font-black text-amber-900 text-[7.5px]">

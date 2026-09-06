@@ -63,7 +63,7 @@ export default function Footer() {
             <div className="space-y-6 text-xs font-bold text-white/40 uppercase tracking-widest">
               <div className="flex items-start gap-4">
                  <MapPin size={18} className="text-saffron shrink-0" />
-                 <p className="leading-loose">श्री जगन्नाथ ओड़िआ बाबा सेवा संस्थान,<br /> अयोध्या धाम, उत्तर प्रदेश - 224123</p>
+                 <p className="leading-relaxed">श्री जगन्नाथ ओड़िआ बाबा सेवा संस्थान,<br />जगन्नाथ घाट, निकट-राज घाट,<br />अयोध्या, उत्तर प्रदेश - 224123</p>
               </div>
               <div className="flex items-start gap-4">
                  <Phone size={18} className="text-saffron shrink-0 mt-0.5" />
