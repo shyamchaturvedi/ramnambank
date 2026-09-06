@@ -10,12 +10,25 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // केवल एडमिन ही संवेदनशील सेटिंग्स या रोल्स बदल सके
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'iammshyam@gmail.com' ||
+        (exists(/databases/$(database)/documents/members/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/members/$(request.auth.uid)).data.role == 'ADMIN')
+      );
+    }
+
     // Members collection
     match /members/{memberId} {
       allow read: if true;
       allow create: if true;
-      allow update: if isAuthenticated();
-      allow delete: if isAuthenticated();
+      // सामान्य यूजर अपना डेटा अपडेट कर सकता है, लेकिन role सिर्फ ADMIN बदल सकता है
+      allow update: if isAuthenticated() && (
+        isAdmin() || 
+        (isOwner(memberId) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])))
+      );
+      allow delete: if isAdmin();
     }
 
     // Membership Requests / Orders collection
@@ -23,7 +36,15 @@ service cloud.firestore {
       allow read: if true;
       allow create: if true;
       allow update: if isAuthenticated();
-      allow delete: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // Booklet Submissions collection
+    match /booklet_submissions/{submissionId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin();
     }
 
     // Donations collection
@@ -31,17 +52,18 @@ service cloud.firestore {
       allow read: if true;
       allow create: if true;
       allow update: if isAuthenticated();
+      allow delete: if isAdmin();
     }
 
-    // System Settings & Branches
+    // System Settings & Branches (केवल एडमिन एडिट कर सके)
     match /system_settings/{doc} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isAdmin();
     }
     
     match /branches/{branchId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isAdmin();
     }
   }
 }
