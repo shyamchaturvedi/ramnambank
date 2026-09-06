@@ -83,11 +83,14 @@ export default function DigitalIDCard({ user, showActions = true }: IDCardProps)
   // LIFE -> केन्द्रीय आजीवन सदस्य
   // BANK_LIFE -> श्री राम नाम लेखन सदस्य (₹360 वार्षिक लेखन सदस्यता)
   // REGULAR -> साधारण सदस्य (वार्षिक)
+  const hasPlan = Boolean(user.membership_type && user.membership_type !== 'PENDING' && user.membership_type !== 'NONE');
+  const isActiveMember = hasPlan && (user.status === 'ACTIVE' || !user.status);
+
   const roleTitle = user.membership_type === 'SPECIAL_LIFE' ? 'केन्द्रीय विशिष्ट आजीवन सदस्य' : 
                     user.membership_type === 'LIFE' ? 'केन्द्रीय आजीवन सदस्य' : 
                     user.membership_type === 'BANK_LIFE' ? 'श्री राम नाम लेखन सदस्य' : 
                     user.membership_type === 'REGULAR' ? 'साधारण सदस्य' :
-                    (user.membership_type || user.role || 'श्री राम नाम लेखन सदस्य');
+                    (hasPlan ? user.membership_type : 'सदस्यता अनिर्धारित (योजना शेष)');
 
   // Only true Lifetime plans are SPECIAL_LIFE and LIFE
   const isLifeMember = user.membership_type === 'SPECIAL_LIFE' || user.membership_type === 'LIFE';
@@ -109,19 +112,22 @@ export default function DigitalIDCard({ user, showActions = true }: IDCardProps)
     return `${d}/${m}/${y}`;
   };
 
-  const startDate = parseDate(user.valid_from || user.created_at);
-  const startStr = formatDDMMYY(startDate);
+  let validityText = 'लागू नहीं (सक्रिय योजना आवश्यक)';
+  if (hasPlan) {
+    const startDate = parseDate(user.valid_from || user.created_at);
+    const startStr = formatDDMMYY(startDate);
 
-  let endStr = 'आजीवन (LIFETIME)';
-  if (!isLifeMember) {
-    // 1 Year Annual Validity for BANK_LIFE / REGULAR
-    const expiry = user.valid_till || user.expiry_date 
-      ? parseDate(user.valid_till || user.expiry_date) 
-      : new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000);
-    endStr = formatDDMMYY(expiry);
+    let endStr = 'आजीवन (LIFETIME)';
+    if (!isLifeMember) {
+      // 1 Year Annual Validity for BANK_LIFE / REGULAR
+      const expiry = user.valid_till || user.expiry_date 
+        ? parseDate(user.valid_till || user.expiry_date) 
+        : new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000);
+      endStr = formatDDMMYY(expiry);
+    }
+    validityText = `${startStr} से ${endStr}`;
   }
 
-  const validityText = `${startStr} से ${endStr}`;
   const locationText = [user.district, user.state].filter(Boolean).join(', ') || user.branch || 'अयोध्या धाम';
 
   // Live Online Verification URL
@@ -288,10 +294,10 @@ export default function DigitalIDCard({ user, showActions = true }: IDCardProps)
               <div className="pt-1">
                 <div className="bg-white/[0.04] border border-saffron/30 rounded-xl px-2.5 py-1 flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <Clock size={11} className="text-saffron shrink-0" />
+                    <Clock size={11} className={isActiveMember ? "text-saffron shrink-0" : "text-amber-500 shrink-0"} />
                     <span className="text-[7.5px] font-bold text-white/50 uppercase tracking-wider">सदस्यता वैधता (Validity):</span>
                   </div>
-                  <span className="text-[8.5px] sm:text-[9px] font-black text-green-400 font-mono tracking-tight">
+                  <span className={`text-[8.5px] sm:text-[9px] font-black font-mono tracking-tight ${isActiveMember ? 'text-green-400' : 'text-amber-400'}`}>
                     {validityText}
                   </span>
                 </div>
@@ -318,7 +324,11 @@ export default function DigitalIDCard({ user, showActions = true }: IDCardProps)
             {/* QR Code */}
             <div className="flex items-center gap-2">
               <div className="text-right leading-none hidden sm:block">
-                <p className="text-[7.5px] font-black text-green-400 uppercase">✓ सक्रिय खाता</p>
+                {isActiveMember ? (
+                  <p className="text-[7.5px] font-black text-green-400 uppercase">✓ सक्रिय खाता</p>
+                ) : (
+                  <p className="text-[7.5px] font-black text-amber-400 uppercase">⚠️ योजना अप्राप्त</p>
+                )}
                 <p className="text-[6.5px] text-white/40 uppercase mt-0.5">QR कोड सत्यापन</p>
               </div>
               <div className="w-10 h-10 sm:w-11 sm:h-11 bg-white p-0.5 rounded-lg shadow-md flex items-center justify-center shrink-0">
