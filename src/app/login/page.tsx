@@ -225,7 +225,7 @@ export default function CentralLogin() {
                   type="text" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={role === 'ADMIN' ? 'एडमिन ईमेल (e.g. iammshyam@gmail.com)' : 'मोबाइल नंबर / ईमेल / भक्त ID'} 
+                  placeholder={role === 'ADMIN' ? 'एडमिन ईमेल दर्ज करें (Admin Email)' : 'मोबाइल नंबर / ईमेल / भक्त ID'} 
                   className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-saffron text-white text-sm"
                 />
                 <input 
