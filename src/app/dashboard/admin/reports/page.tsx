@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -108,36 +107,39 @@ export default function ReportsPage() {
   };
 
   return (
-    <DashboardLayout userRole="ADMIN">
-      <div className="space-y-8 pb-20">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div className="space-y-1">
-            <h2 className="text-3xl font-black font-serif gold-text uppercase">
-              दैनिक रिपोर्ट एवं व्यापार विश्लेषण (Daily Reports)
-            </h2>
-            <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.3em]">
-              Real-time Passes, Orders, Fulfillment & Revenue Insights
-            </p>
+    <div className="space-y-8 pb-20 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-saffron/10 border border-saffron/20 text-saffron text-[10px] font-black uppercase tracking-widest">
+            <BarChart3 size={13} />
+            <span>लाइव व्यापार एवं वितरण अंतर्दृष्टि</span>
           </div>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => window.print()} 
-              className="px-5 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/10 flex items-center gap-2 transition-all"
-            >
-              <Printer size={16} /> प्रिंट रिपोर्ट
-            </button>
-            <button 
-              onClick={handleExportCSV}
-              className="saffron-btn px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
-            >
-              <Download size={16} /> CSV एक्सपोर्ट
-            </button>
-          </div>
+          <h2 className="text-3xl md:text-4xl font-black font-serif gold-text uppercase tracking-tight">
+            दैनिक रिपोर्ट एवं व्यापार विश्लेषण
+          </h2>
+          <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.3em]">
+            Real-time Passes, Orders, Fulfillment & Revenue Insights
+          </p>
         </div>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => window.print()} 
+            className="px-5 py-3.5 bg-white/5 hover:bg-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/10 flex items-center gap-2 transition-all hover:border-white/20 active:scale-95"
+          >
+            <Printer size={16} /> प्रिंट रिपोर्ट
+          </button>
+          <button 
+            onClick={handleExportCSV}
+            className="saffron-btn px-6 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-[0_10px_25px_rgba(255,153,51,0.2)] active:scale-95"
+          >
+            <Download size={16} /> CSV एक्सपोर्ट
+          </button>
+        </div>
+      </div>
 
-        {/* 4 Key Business Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* 4 Key Business Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Metric 1: Daily Passes Created */}
           <div className="premium-card p-6 bg-gradient-to-br from-amber-500/15 to-transparent border-l-4 border-amber-500 space-y-3">
             <div className="flex justify-between items-center">
@@ -274,6 +276,5 @@ export default function ReportsPage() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
   );
 }

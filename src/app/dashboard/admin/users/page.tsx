@@ -113,8 +113,8 @@ export default function UserManagementPage() {
            {[
              { label: 'कुल यूजर', val: users.length, icon: Users, color: 'text-saffron' },
              { label: 'प्रशासक', val: users.filter(u => u.role === 'ADMIN').length, icon: ShieldCheck, color: 'text-sacred-red' },
-             { label: 'स्वयंसेवक', val: users.filter(u => u.role === 'VOLUNTEER').length, icon: CheckCircle, color: 'text-blue-500' },
-             { label: 'ब्लॉक यूजर', val: users.filter(u => u.status !== 'ACTIVE').length, icon: Ban, color: 'text-red-500' },
+             { label: 'सक्रिय सदस्य', val: users.filter(u => u.status === 'ACTIVE').length, icon: CheckCircle, color: 'text-green-400' },
+             { label: 'योजना लंबित', val: users.filter(u => u.status === 'PENDING_MEMBERSHIP').length, icon: Clock, color: 'text-amber-400' },
            ].map((s, i) => (
              <div key={i} className="premium-card p-6 border-b-2 border-white/5 hover:border-saffron/30 transition-all">
                 <div className="flex justify-between items-start mb-4">
@@ -195,8 +195,10 @@ export default function UserManagementPage() {
                              <div className="flex items-center gap-2">
                                 {user.status === 'ACTIVE' ? (
                                    <><div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">सक्रिय</span></>
+                                ) : user.status === 'PENDING_MEMBERSHIP' ? (
+                                   <><div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" /> <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">योजना लंबित</span></>
                                 ) : (
-                                   <><div className="w-1.5 h-1.5 rounded-full bg-red-500" /> <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">ब्लॉक</span></>
+                                   <><div className="w-1.5 h-1.5 rounded-full bg-red-500" /> <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">ब्लॉक / असक्रिय</span></>
                                 )}
                              </div>
                           </td>
