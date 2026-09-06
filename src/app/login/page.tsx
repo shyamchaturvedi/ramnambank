@@ -82,7 +82,7 @@ export default function CentralLogin() {
         const signedInUid = userCred.user.uid;
 
         // Fetch actual member role from Firestore
-        let userRole = role;
+        let actualRole = 'DEVOTEE';
         try {
           const { collection, query, where, getDocs } = await import('firebase/firestore');
           let userDoc = await getDoc(doc(db, 'members', signedInUid));
@@ -95,17 +95,21 @@ export default function CentralLogin() {
           }
 
           if (data && data.role) {
-            userRole = data.role.toUpperCase();
+            actualRole = data.role.toUpperCase();
           }
         } catch(e) {}
 
-        if (userRole === 'ADMIN') {
-          window.location.href = '/dashboard/admin';
-        } else if (userRole === 'BRANCH_MANAGER') {
-          window.location.href = '/dashboard/branch/details';
-        } else if (userRole === 'VOLUNTEER') {
-          window.location.href = '/dashboard/volunteer/verify';
+        // Tab selection determines the destination portal:
+        if (role === 'ADMIN') {
+          if (actualRole === 'ADMIN') {
+            window.location.href = '/dashboard/admin';
+          } else {
+            setError('आपके पास व्यवस्थापक (Admin) अधिकार नहीं हैं। कृपया "भक्त प्रवेश" से लॉगिन करें।');
+            setIsLoggingIn(false);
+            return;
+          }
         } else {
+          // User chose "भक्त प्रवेश" (Devotee Portal Login)
           window.location.href = '/dashboard/devotee';
         }
         return;

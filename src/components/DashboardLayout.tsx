@@ -146,7 +146,20 @@ export default function DashboardLayout({
     ]
   };
 
-  const navItems = menuGroups[internalUserRole as keyof typeof menuGroups] || menuGroups.DEVOTEE;
+  // Determine active navigation menu based on current section:
+  // If on /dashboard/admin -> show ADMIN menu
+  // If on /dashboard/branch -> show BRANCH_MANAGER menu
+  // If on /dashboard/volunteer -> show VOLUNTEER menu
+  // If on /dashboard/devotee -> show DEVOTEE menu
+  const getActiveNavGroup = () => {
+    if (pathname.startsWith('/dashboard/admin')) return menuGroups.ADMIN;
+    if (pathname.startsWith('/dashboard/branch')) return menuGroups.BRANCH_MANAGER;
+    if (pathname.startsWith('/dashboard/volunteer')) return menuGroups.VOLUNTEER;
+    if (pathname.startsWith('/dashboard/devotee')) return menuGroups.DEVOTEE;
+    return menuGroups[internalUserRole as keyof typeof menuGroups] || menuGroups.DEVOTEE;
+  };
+
+  const navItems = getActiveNavGroup();
 
   // 2. Route Protection
   useEffect(() => {
