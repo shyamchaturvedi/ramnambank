@@ -13,40 +13,26 @@ export default function ReferralTreePage() {
   useEffect(() => {
     const fetchReferrals = async () => {
       try {
-        // Fetch all members who were referred
-        const { data, error } = await supabase
-          .from('members')
-          .select('full_name, membership_id, referral_code, created_at, state, district')
-          .not('referral_code', 'is', null)
-          .order('created_at', { ascending: false });
+        const { db } = await import('@/lib/firebase');
+        const { collection, getDocs } = await import('firebase/firestore');
 
-        if (data) {
-          // Now fetch the details of the referrers
-          // The referral_code in the 'members' table is the membership_id (minus slashes) of the person who referred them
-          // We need to match this.
-          
-          const formatted = await Promise.all(data.map(async (member) => {
-            // Find who this referral code belongs to
-            // Note: Our current logic stores the referral code as the membership_id without slashes
-            const cleanCode = member.referral_code;
-            
-            // This is a bit slow for many records, but okay for now
-            // In a better schema, we would have a 'referred_by_id' UUID column
-            const { data: referrer } = await supabase
-              .from('members')
-              .select('full_name, membership_id')
-              .ilike('membership_id', `%${cleanCode.split('').join('%')}%`) // Fuzzy match to handle slashes
-              .maybeSingle();
+        const snap = await getDocs(collection(db, 'members'));
+        const membersList: any[] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-            return {
-              ...member,
-              referrer_name: referrer?.full_name || 'अज्ञात (Unknown)',
-              referrer_id: referrer?.membership_id || cleanCode
-            };
-          }));
+        const referred = membersList.filter((m: any) => m.referral_code);
 
-          setReferrals(formatted);
-        }
+        const formatted = referred.map((member: any) => {
+          const cleanCode = member.referral_code;
+          const referrer = membersList.find((m: any) => m.membership_id === cleanCode || m.id === cleanCode);
+
+          return {
+            ...member,
+            referrer_name: referrer?.full_name || 'अयोध्या मुख्य शाखा',
+            referrer_id: referrer?.membership_id || cleanCode
+          };
+        });
+
+        setReferrals(formatted);
       } catch (error) {
         console.error('Error fetching referrals:', error);
       } finally {
