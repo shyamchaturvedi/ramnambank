@@ -68,7 +68,7 @@ export const createMember = async (memberData: any) => {
 };
 
 // 3. Branches List
-export const getBranches = async () => {
+export const getBranches = async (): Promise<any[]> => {
   const defaultBranches = [
     { id: '1', name: 'KENDRAPARA SUB DIVISION', code: 'OD/17/01', city: 'Kendrapara', state: 'Odisha' },
     { id: '2', name: 'PATAMUNDAI NAC', code: 'OD/17/02', city: 'Kendrapara', state: 'Odisha' },

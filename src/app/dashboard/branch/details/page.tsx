@@ -14,19 +14,25 @@ export default function MyBranchEdit() {
   useEffect(() => {
     const loadBranch = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          const { data: member } = await supabase
-            .from('members')
-            .select('branch_code')
-            .eq('email', session.user.email)
-            .maybeSingle();
+        const { auth, db } = await import('@/lib/firebase');
+        const { doc, getDoc } = await import('firebase/firestore');
+
+        const user = auth.currentUser;
+        if (user) {
+          const snap = await getDoc(doc(db, 'members', user.uid));
+          const member = snap.data();
 
           if (member?.branch_code) {
-            const branches = await getBranches();
-            const myBranch = branches.find(b => b.code === member.branch_code);
-            setBranchData(myBranch);
+            const branches: any[] = await getBranches();
+            const myBranch = branches.find((b: any) => b.code === member.branch_code);
+            setBranchData(myBranch || branches[0]);
+          } else {
+            const branches: any[] = await getBranches();
+            setBranchData(branches[0]);
           }
+        } else {
+          const branches: any[] = await getBranches();
+          setBranchData(branches[0]);
         }
       } catch (err) {
         console.error('Error loading branch:', err);
