@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&family=Inter:wght@100..900&family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&family=Inter:wght@100..900&family=Lora:ital,wght@0,400..700;1,400..700&family=Rozha+One&family=Tiro+Devanagari+Hindi:ital@0;1&family=Yatra+One&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -16,14 +16,19 @@
   --background: #0A0A0A;
   --foreground: #F5F5F5;
   --glass-bg: rgba(20, 20, 20, 0.7);
-  --header-font: 'Cinzel', serif;
+  --header-font: 'Tiro Devanagari Hindi', 'Cinzel', serif;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', 'Tiro Devanagari Hindi', sans-serif;
   overflow-x: hidden;
+}
+
+/* Ensure Hindi font applies to serif headings */
+.font-serif {
+  font-family: 'Tiro Devanagari Hindi', 'Cinzel', 'Lora', serif !important;
 }
 
 .premium-card {
@@ -41,12 +46,17 @@ body {
   box-shadow: 0 20px 60px rgba(255, 153, 51, 0.15);
 }
 
+/* Fixed Gold Text for Hindi Matras - increased line-height & vertical padding so matras don't get clipped */
 .gold-text {
-  background: linear-gradient(to bottom, #FFD700 0%, #B8860B 50%, #FFD700 100%);
+  background: linear-gradient(to bottom, #FFE57F 0%, #FFD700 35%, #D4AF37 70%, #FFD700 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
   display: inline-block;
+  line-height: 1.35 !important;
+  padding-top: 0.15em !important;
+  padding-bottom: 0.15em !important;
+  overflow: visible !important;
 }
 
 .saffron-btn {
