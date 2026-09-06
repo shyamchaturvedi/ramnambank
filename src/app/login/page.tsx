@@ -78,8 +78,36 @@ export default function CentralLogin() {
 
       try {
         // 1. Firebase Sign In
-        await signInWithEmailAndPassword(auth, targetEmail, cleanPassword);
-        window.location.href = role === 'ADMIN' ? '/dashboard/admin' : '/dashboard/devotee';
+        const userCred = await signInWithEmailAndPassword(auth, targetEmail, cleanPassword);
+        const signedInUid = userCred.user.uid;
+
+        // Fetch actual member role from Firestore
+        let userRole = role;
+        try {
+          const { collection, query, where, getDocs } = await import('firebase/firestore');
+          let userDoc = await getDoc(doc(db, 'members', signedInUid));
+          let data: any = userDoc.exists() ? userDoc.data() : null;
+
+          if (!data && targetEmail) {
+            const q = query(collection(db, 'members'), where('email', '==', targetEmail));
+            const snap = await getDocs(q);
+            if (!snap.empty) data = snap.docs[0].data();
+          }
+
+          if (data && data.role) {
+            userRole = data.role.toUpperCase();
+          }
+        } catch(e) {}
+
+        if (userRole === 'ADMIN') {
+          window.location.href = '/dashboard/admin';
+        } else if (userRole === 'BRANCH_MANAGER') {
+          window.location.href = '/dashboard/branch/details';
+        } else if (userRole === 'VOLUNTEER') {
+          window.location.href = '/dashboard/volunteer/verify';
+        } else {
+          window.location.href = '/dashboard/devotee';
+        }
         return;
       } catch (authError: any) {
         // Auto-Register or fallback if first time

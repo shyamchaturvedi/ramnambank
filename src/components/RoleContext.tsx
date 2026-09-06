@@ -29,14 +29,29 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
           
           // Check Firestore doc for accurate role
           try {
-            const userDoc = await getDoc(doc(db, 'members', currentUser.uid));
-            if (userDoc.exists()) {
-              const data = userDoc.data();
-              if (data.role) {
-                setRole(data.role.toUpperCase() as Role);
-              } else {
-                setRole('DEVOTEE');
+            const { collection, query, where, getDocs } = await import('firebase/firestore');
+            let userDoc = await getDoc(doc(db, 'members', currentUser.uid));
+            let data: any = userDoc.exists() ? userDoc.data() : null;
+
+            if (!data && currentUser.email) {
+              const q = query(collection(db, 'members'), where('email', '==', currentUser.email));
+              const snap = await getDocs(q);
+              if (!snap.empty) {
+                data = snap.docs[0].data();
               }
+            }
+
+            if (!data && currentUser.email?.endsWith('@ramnam.bank')) {
+              const mobile = currentUser.email.replace('@ramnam.bank', '');
+              const q = query(collection(db, 'members'), where('mobile_number', '==', mobile));
+              const snap = await getDocs(q);
+              if (!snap.empty) {
+                data = snap.docs[0].data();
+              }
+            }
+
+            if (data && data.role) {
+              setRole(data.role.toUpperCase() as Role);
             } else {
               setRole('DEVOTEE');
             }
