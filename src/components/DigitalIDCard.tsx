@@ -261,8 +261,12 @@ export default function DigitalIDCard({ user, showActions = true }: IDCardProps)
                   <span className="text-[8px] text-white/50 uppercase font-bold tracking-widest mt-1">भक्त</span>
                 </div>
               )}
-              <div className="absolute bottom-0 inset-x-0 bg-black/85 py-0.5 text-[7.5px] font-black text-center text-saffron uppercase border-t border-saffron/40 tracking-wider">
-                ✓ सत्यापित
+              <div className={`absolute bottom-0 inset-x-0 py-0.5 text-[7.5px] font-black text-center uppercase border-t tracking-wider ${
+                isActiveMember 
+                  ? 'bg-black/85 text-saffron border-saffron/40' 
+                  : 'bg-black/90 text-amber-400/80 border-amber-500/30'
+              }`}>
+                {isActiveMember ? '✓ सत्यापित' : 'योजना शेष'}
               </div>
             </div>
 
@@ -272,8 +276,12 @@ export default function DigitalIDCard({ user, showActions = true }: IDCardProps)
                 <h4 className="text-base sm:text-lg font-black text-white truncate leading-tight uppercase font-serif tracking-wide">
                   {user.name}
                 </h4>
-                <div className="inline-flex items-center gap-1 bg-amber-500/15 px-2.5 py-0.5 rounded-lg border border-amber-500/40 text-[8.5px] sm:text-[9.5px] font-black text-amber-300 uppercase tracking-widest mt-0.5 shadow-sm">
-                  <Award size={10} className="text-amber-400" />
+                <div className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg border text-[8.5px] sm:text-[9.5px] font-black uppercase tracking-widest mt-0.5 shadow-sm ${
+                  isActiveMember 
+                    ? 'bg-amber-500/15 border-amber-500/40 text-amber-300' 
+                    : 'bg-white/5 border-white/10 text-white/50'
+                }`}>
+                  <Award size={10} className={isActiveMember ? "text-amber-400" : "text-white/40"} />
                   {roleTitle}
                 </div>
               </div>

@@ -305,7 +305,8 @@ export default function ProfilePage() {
                          district: 'Kendrapara',
                          state: 'Odisha',
                          role: 'DEVOTEE',
-                         membership_type: 'BANK_LIFE',
+                         status: 'PENDING_MEMBERSHIP',
+                         membership_type: null,
                          photo_url: ''
                       };
 
@@ -317,6 +318,7 @@ export default function ProfilePage() {
                          membership_id: finalMember.membership_id || `OD/17/${thisYear}/001`,
                          name: finalMember.full_name || 'भक्त',
                          role: finalMember.role || 'DEVOTEE',
+                         status: finalMember.status || 'PENDING_MEMBERSHIP',
                          branch: finalMember.branch_name || initialBranch.branch_name,
                          branch_code: finalMember.branch_code || initialBranch.branch_code,
                          email: finalMember.email || currentUser.email,
@@ -330,7 +332,7 @@ export default function ProfilePage() {
                          state: finalMember.state || '',
                          pin_code: finalMember.pin_code || '',
                          landmark: finalMember.landmark || '',
-                         membership_type: finalMember.membership_type || 'BANK_LIFE',
+                         membership_type: finalMember.membership_type || null,
                          is_overdue: false
                       });
 
