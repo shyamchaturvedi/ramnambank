@@ -39,9 +39,9 @@ export default function ReportsPage() {
       const { collection, getDocs, doc, getDoc } = await import('firebase/firestore');
 
       const reqSnap = await getDocs(collection(db, 'membership_requests'));
-      const allOrders = await Promise.all(
+      const allOrders: any[] = await Promise.all(
         reqSnap.docs.map(async (d) => {
-          const reqData = d.data();
+          const reqData = d.data() as any;
           let memberInfo: any = {};
           try {
             if (reqData.user_id) {
@@ -59,26 +59,26 @@ export default function ReportsPage() {
       );
 
       const donSnap = await getDocs(collection(db, 'donations'));
-      const allDonations = donSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const allDonations: any[] = donSnap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
 
       // Calculate Dates
       const now = new Date();
       const todayStr = now.toISOString().split('T')[0];
 
-      const todayOrders = allOrders.filter(o => o.created_at?.startsWith(todayStr));
-      const todayApproved = todayOrders.filter(o => o.status === 'APPROVED');
-      const allApproved = allOrders.filter(o => o.status === 'APPROVED');
+      const todayOrders = allOrders.filter((o: any) => o.created_at?.startsWith(todayStr));
+      const todayApproved = todayOrders.filter((o: any) => o.status === 'APPROVED');
+      const allApproved = allOrders.filter((o: any) => o.status === 'APPROVED');
 
-      const totalRevenue = allApproved.reduce((sum, o) => sum + (Number(o.amount) || 0), 0) +
-                           allDonations.filter(d => d.status === 'APPROVED').reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+      const totalRevenue = allApproved.reduce((sum: number, o: any) => sum + (Number(o.amount) || 0), 0) +
+                           allDonations.filter((d: any) => d.status === 'APPROVED').reduce((sum: number, d: any) => sum + (Number(d.amount) || 0), 0);
 
-      const todayRevenue = todayApproved.reduce((sum, o) => sum + (Number(o.amount) || 0), 0);
+      const todayRevenue = todayApproved.reduce((sum: number, o: any) => sum + (Number(o.amount) || 0), 0);
 
       setStats({
         passesToday: todayApproved.length,
         totalOrders: allOrders.length,
         fulfilledOrders: allApproved.length,
-        pendingOrders: allOrders.filter(o => o.status === 'PENDING').length,
+        pendingOrders: allOrders.filter((o: any) => o.status === 'PENDING').length,
         totalMoneyCollected: totalRevenue,
         todayMoneyCollected: todayRevenue
       });
