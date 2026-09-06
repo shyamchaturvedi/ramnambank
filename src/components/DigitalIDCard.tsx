@@ -267,7 +267,7 @@ export default function DigitalIDCard({ user, showActions = true }: IDCardProps)
                   {user.name}
                 </h4>
                 <div className="inline-flex items-center gap-1 bg-amber-500/15 px-2.5 py-0.5 rounded-lg border border-amber-500/40 text-[8.5px] sm:text-[9.5px] font-black text-amber-300 uppercase tracking-widest mt-0.5 shadow-sm">
-                  <Sparkles size={10} className="text-amber-400" />
+                  <Award size={10} className="text-amber-400" />
                   {roleTitle}
                 </div>
               </div>

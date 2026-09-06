@@ -533,7 +533,7 @@ function RegistrationForm() {
         <div className="p-5 rounded-3xl bg-white/[0.03] border border-white/10 space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-saffron uppercase tracking-widest flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-saffron" /> पिन कोड, राज्य एवं जिला (Auto-Fill & Select)
+              <MapPin className="w-4 h-4 text-saffron" /> पिन कोड, राज्य एवं जिला (Auto-Fill & Select)
             </span>
             {isLoadingPin && (
               <span className="text-[10px] font-black text-saffron animate-pulse">
