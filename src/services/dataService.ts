@@ -242,11 +242,12 @@ export const updateUser = async (id: string, updates: any) => {
 };
 
 // 12. Settings & Membership Plans
-export const getSettings = async () => {
+export const getSettings = async (): Promise<any> => {
   return {
     upi_id: '8090525961m@pnb',
     merchant_name: 'SHRI JAGANNATH ODIA BABA SEWA SANSTHAN',
-    maintenance_mode: false
+    maintenance_mode: false,
+    registration_enabled: true
   };
 };
 
