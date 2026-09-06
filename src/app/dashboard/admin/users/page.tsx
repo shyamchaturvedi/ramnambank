@@ -16,10 +16,9 @@ import {
   Trash2,
   Clock
 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { getUsers, getBranches, updateUser } from '@/services/dataService';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getUsers, getBranches, updateUser, deleteUser } from '@/services/dataService';
 import { useRole } from '@/components/RoleContext';
-import { supabase } from '@/lib/supabase';
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -31,6 +30,12 @@ export default function UserManagementPage() {
   const { role: currentUserRole } = useRole();
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [toast, setToast] = useState<{ show: boolean; msg: string; type: 'success' | 'error' }>({ show: false, msg: '', type: 'success' });
+
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ show: true, msg, type });
+    setTimeout(() => setToast({ show: false, msg: '', type: 'success' }), 3000);
+  };
 
   const fetchUsersAndBranches = async () => {
     setIsLoading(true);
@@ -60,30 +65,46 @@ export default function UserManagementPage() {
     setIsUpdating(true);
     const res = await updateUser(selectedUser.id, {
       role: selectedUser.role,
-      branch_id: selectedUser.branch_id === 'MAIN' ? null : selectedUser.branch_id
+      branch_code: selectedUser.branch_code || 'UP/AY',
+      branch_name: selectedUser.branch_name || 'अयोध्या धाम मुख्य शाखा',
+      status: selectedUser.status || 'ACTIVE'
     });
     
     if (res.success) {
+      showToast('✅ यूजर भूमिका एवं शाखा सफलतापूर्वक अपडेट हो गई!');
       setIsEditModalOpen(false);
       fetchUsersAndBranches();
     } else {
-      alert('त्रुटि: ' + res.error);
+      showToast('❌ त्रुटि: ' + res.error, 'error');
     }
     setIsUpdating(false);
+  };
+
+  const handleToggleStatus = async (user: any) => {
+    const newStatus = user.status === 'BLOCKED' ? 'ACTIVE' : 'BLOCKED';
+    const actionName = newStatus === 'BLOCKED' ? 'ब्लॉक' : 'सक्रिय';
+    if (!window.confirm(`क्या आप इस यूजर को ${actionName} करना चाहते हैं?`)) return;
+
+    const res = await updateUser(user.id, { status: newStatus });
+    if (res.success) {
+      showToast(`✅ यूजर स्थिति: ${actionName} कर दी गई!`);
+      fetchUsersAndBranches();
+    } else {
+      showToast('❌ त्रुटि: ' + res.error, 'error');
+    }
   };
 
   const handleDeleteUser = async (id: string) => {
     if (!window.confirm('क्या आप निश्चित रूप से इस यूजर को हटाना चाहते हैं?')) return;
     
     setIsDeleting(true);
-    // In a real app, you would call a deleteUser service
-    const { error } = await supabase.from('members').delete().eq('id', id);
+    const res = await deleteUser(id);
     
-    if (!error) {
-      alert('यूजर सफलतापूर्वक हटा दिया गया।');
+    if (res.success) {
+      showToast('✅ यूजर सफलतापूर्वक हटा दिया गया।');
       fetchUsersAndBranches();
     } else {
-      alert('हटाने में त्रुटि: ' + error.message);
+      showToast('❌ हटाने में त्रुटि: ' + res.error, 'error');
     }
     setIsDeleting(false);
   };
@@ -214,7 +235,7 @@ export default function UserManagementPage() {
                                 >
                                    <ShieldCheck size={16} />
                                 </button>
-                                
+
                                 {currentUserRole === 'ADMIN' && (
                                   <button 
                                     onClick={() => handleDeleteUser(user.id)}
@@ -225,8 +246,12 @@ export default function UserManagementPage() {
                                   </button>
                                 )}
 
-                                <button className={`p-2 rounded-lg bg-white/5 transition-all ${user.status === 'ACTIVE' ? 'text-white/40 hover:text-red-500 hover:bg-red-500/10' : 'text-green-500 bg-green-500/10'}`} title={user.status === 'ACTIVE' ? 'ब्लॉक करें' : 'अनब्लॉक करें'}>
-                                   {user.status === 'ACTIVE' ? <Ban size={16} /> : <CheckCircle size={16} />}
+                                <button 
+                                  onClick={() => handleToggleStatus(user)}
+                                  className={`p-2 rounded-lg bg-white/5 transition-all ${user.status === 'BLOCKED' ? 'text-green-500 bg-green-500/10 hover:bg-green-500/20' : 'text-white/40 hover:text-red-500 hover:bg-red-500/10'}`} 
+                                  title={user.status === 'BLOCKED' ? 'अनब्लॉक करें' : 'ब्लॉक करें'}
+                                >
+                                   {user.status === 'BLOCKED' ? <CheckCircle size={16} /> : <Ban size={16} />}
                                 </button>
                              </div>
                           </td>
@@ -236,6 +261,25 @@ export default function UserManagementPage() {
               </table>
            </div>
         </div>
+
+        {/* Toast Notification */}
+        <AnimatePresence>
+          {toast.show && (
+            <motion.div
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.9 }}
+              className={`fixed bottom-8 right-8 z-[200] px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border font-bold text-xs flex items-center gap-3 ${
+                toast.type === 'error'
+                  ? 'bg-red-950/90 border-red-500/50 text-red-200'
+                  : 'bg-[#12100E]/95 border-saffron/50 text-saffron'
+              }`}
+            >
+              <CheckCircle size={18} />
+              <span>{toast.msg}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Edit Role/Branch Modal */}
         {isEditModalOpen && selectedUser && (
@@ -251,30 +295,38 @@ export default function UserManagementPage() {
                      </div>
 
                      <form onSubmit={handleUpdateUser} className="space-y-6">
-                        <div className="space-y-3">
-                           <label className="text-[10px] font-black text-white/30 uppercase tracking-widest">भूमिका (Role)</label>
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">भूमिका (Role)</label>
                            <select 
-                             value={selectedUser.role}
+                             value={selectedUser.role} 
                              onChange={(e) => setSelectedUser({...selectedUser, role: e.target.value})}
-                             className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 text-white text-xs font-bold outline-none focus:border-saffron/50 transition-all"
+                             className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-saffron/50 text-xs text-white font-bold"
                            >
-                              <option value="DEVOTEE" className="bg-black">भक्त (DEVOTEE)</option>
-                              <option value="BRANCH_MANAGER" className="bg-black">शाखा प्रबंधक (BRANCH MANAGER)</option>
-                              <option value="VOLUNTEER" className="bg-black">स्वयंसेवक (VOLUNTEER)</option>
-                              <option value="ADMIN" className="bg-black">प्रशासक (ADMIN)</option>
+                              <option value="DEVOTEE" className="bg-[#121212]">भक्त (Devotee)</option>
+                              <option value="VOLUNTEER" className="bg-[#121212]">स्वयंसेवक (Volunteer)</option>
+                              <option value="BRANCH_MANAGER" className="bg-[#121212]">शाखा प्रबंधक (Branch Manager)</option>
+                              <option value="ADMIN" className="bg-[#121212]">केन्द्रीय व्यवस्थापक (Admin)</option>
                            </select>
                         </div>
 
-                        <div className="space-y-3">
-                           <label className="text-[10px] font-black text-white/30 uppercase tracking-widest">शाखा (Branch) आवंटन</label>
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">शाखा अलॉट करें (Assign Branch)</label>
                            <select 
-                             value={selectedUser.branch_id || 'MAIN'}
-                             onChange={(e) => setSelectedUser({...selectedUser, branch_id: e.target.value})}
-                             className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 text-white text-xs font-bold outline-none focus:border-saffron/50 transition-all"
+                             value={selectedUser.branch_code || 'UP/AY'} 
+                             onChange={(e) => {
+                               const b = branches.find(item => item.code === e.target.value);
+                               setSelectedUser({
+                                 ...selectedUser, 
+                                 branch_code: e.target.value,
+                                 branch_name: b?.name || selectedUser.branch_name
+                               });
+                             }}
+                             className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-saffron/50 text-xs text-white font-bold"
                            >
-                              <option value="MAIN" className="bg-black">मुख्य कार्यालय (Main HQ)</option>
                               {branches.map(b => (
-                                 <option key={b.id} value={b.id} className="bg-black">{b.name}</option>
+                                <option key={b.id || b.code} value={b.code} className="bg-[#121212]">
+                                   {b.name} ({b.code})
+                                </option>
                               ))}
                            </select>
                         </div>

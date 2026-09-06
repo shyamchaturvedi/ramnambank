@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Plus, History, Building2, Package, Search, ArrowRightLeft, Edit, Trash2, CheckCircle2, XCircle, AlertTriangle, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from '@/lib/supabase';
+import { getBranches, getInventoryData, saveInventoryDispatch, updateInventoryStock, deleteInventoryLog } from '@/services/dataService';
 
 export default function AdminInventoryPage() {
   const [branches, setBranches] = useState<any[]>([]);
@@ -12,6 +12,12 @@ export default function AdminInventoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [toast, setToast] = useState<{ show: boolean; msg: string; type: 'success' | 'error' }>({ show: false, msg: '', type: 'success' });
+
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ show: true, msg, type });
+    setTimeout(() => setToast({ show: false, msg: '', type: 'success' }), 3000);
+  };
   
   // Form State
   const [formData, setFormData] = useState({
@@ -32,19 +38,14 @@ export default function AdminInventoryPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [
-        { data: branchesData },
-        { data: invData },
-        { data: logsData }
-      ] = await Promise.all([
-        supabase.from('branches').select('*').order('name'),
-        supabase.from('inventory').select('*, branches(name)'),
-        supabase.from('inventory_logs').select('*, branches(name)').order('created_at', { ascending: false }).limit(20)
+      const [branchList, invRes] = await Promise.all([
+        getBranches(),
+        getInventoryData()
       ]);
 
-      setBranches(branchesData || []);
-      setInventory(invData || []);
-      setLogs(logsData || []);
+      setBranches(branchList || []);
+      setInventory(invRes.inventory || []);
+      setLogs(invRes.logs || []);
     } catch (err) {
       console.error('Fetch error:', err);
     } finally {
@@ -61,70 +62,45 @@ export default function AdminInventoryPage() {
     if (!formData.branch_id || formData.quantity <= 0) return;
 
     try {
-      // 1. Log the transaction
-      const { error: logError } = await supabase.from('inventory_logs').insert([{
+      const selectedBranch = branches.find(b => (b.id || b.code) === formData.branch_id);
+      const res = await saveInventoryDispatch({
         branch_id: formData.branch_id,
+        branch_name: selectedBranch?.name || 'शाखा',
         item_name: formData.item_name,
-        quantity: formData.quantity,
+        quantity: Number(formData.quantity),
         type: formData.type,
         notes: formData.notes
-      }]);
-
-      if (logError) throw logError;
-
-      // 2. Update current stock
-      const { data: current } = await supabase
-        .from('inventory')
-        .select('quantity')
-        .eq('branch_id', formData.branch_id)
-        .eq('item_name', formData.item_name)
-        .maybeSingle();
-
-      const newQty = formData.type === 'CREDIT' 
-        ? (current?.quantity || 0) + formData.quantity 
-        : (current?.quantity || 0) - formData.quantity;
-
-      const { error: upsertError } = await supabase.from('inventory').upsert({
-        branch_id: formData.branch_id,
-        item_name: formData.item_name,
-        quantity: Math.max(0, newQty),
-        updated_at: new Date().toISOString()
       });
 
-      if (upsertError) throw upsertError;
+      if (!res.success) throw new Error(res.error);
 
+      showToast('✅ स्टॉक प्रेषण/प्राप्ति सफलतापूर्वक दर्ज हो गई!');
       setIsModalOpen(false);
       setFormData({ branch_id: '', item_name: 'BOOK', quantity: 0, type: 'CREDIT', notes: '' });
       fetchData();
     } catch (err: any) {
-      alert(err.message);
+      showToast('❌ त्रुटि: ' + err.message, 'error');
     }
   };
 
   const handleUpdateStock = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { error } = await supabase
-        .from('inventory')
-        .update({ quantity: editData.quantity, updated_at: new Date().toISOString() })
-        .eq('branch_id', editData.branch_id)
-        .eq('item_name', editData.item_name);
+      const selectedBranch = branches.find(b => (b.id || b.code) === editData.branch_id);
+      const res = await updateInventoryStock(
+        editData.branch_id, 
+        editData.item_name, 
+        Number(editData.quantity), 
+        selectedBranch?.name || 'शाखा'
+      );
 
-      if (error) throw error;
+      if (!res.success) throw new Error(res.error);
       
-      // Also log this manual adjustment
-      await supabase.from('inventory_logs').insert([{
-        branch_id: editData.branch_id,
-        item_name: editData.item_name,
-        quantity: editData.quantity,
-        type: 'ADJUSTMENT',
-        notes: 'Manual manual adjustment by Admin'
-      }]);
-
+      showToast('✅ स्टॉक सफलतापूर्वक अपडेट कर दिया गया!');
       setIsEditModalOpen(false);
       fetchData();
     } catch (err: any) {
-      alert(err.message);
+      showToast('❌ त्रुटि: ' + err.message, 'error');
     }
   };
 
@@ -132,11 +108,12 @@ export default function AdminInventoryPage() {
     if (!confirm('क्या आप वाकई इस ट्रांजेक्शन को हटाना चाहते हैं? इससे स्टॉक पर असर नहीं पड़ेगा, सिर्फ लॉग हटेगा।')) return;
     
     try {
-      const { error } = await supabase.from('inventory_logs').delete().eq('id', logId);
-      if (error) throw error;
+      const res = await deleteInventoryLog(logId);
+      if (!res.success) throw new Error(res.error);
+      showToast('✅ लॉग रिकॉर्ड सफलतापूर्वक हटा दिया गया।');
       fetchData();
     } catch (err: any) {
-      alert(err.message);
+      showToast('❌ त्रुटि: ' + err.message, 'error');
     }
   };
 
@@ -434,6 +411,25 @@ export default function AdminInventoryPage() {
               </form>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast.show && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            className={`fixed bottom-8 right-8 z-[200] px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border font-bold text-xs flex items-center gap-3 ${
+              toast.type === 'error'
+                ? 'bg-red-950/90 border-red-500/50 text-red-200'
+                : 'bg-[#12100E]/95 border-saffron/50 text-saffron'
+            }`}
+          >
+            <CheckCircle2 size={18} />
+            <span>{toast.msg}</span>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

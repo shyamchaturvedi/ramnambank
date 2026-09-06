@@ -76,61 +76,30 @@ export const createMember = async (memberData: any) => {
   }
 };
 
-// 3. Branches List & Realtime Listener
-export const DEFAULT_BRANCHES = [
-  { id: '1', name: 'KENDRAPARA SUB DIVISION', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
-  { id: 'ayodhya-main', name: 'अयोध्या धाम केन्द्रीय मुख्य शाखा', code: 'UP/AY', city: 'Ayodhya', state: 'Uttar Pradesh', status: 'ACTIVE' },
-  { id: '2', name: 'PATAMUNDAI NAC', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
-  { id: '3', name: 'ALI BLOCK', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
-  { id: '4', name: 'DERABISH BLOCK', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
-  { id: '5', name: 'GARADPUR BLOCK', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
-  { id: '6', name: 'KENDRAPARA BLOCK', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
-  { id: '7', name: 'MAHAKALPADA BLOCK', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
-  { id: '8', name: 'MARSHAGHAI BLOCK', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
-  { id: '9', name: 'PATAMUNDAI BLOCK', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
-  { id: '10', name: 'RAJNAGAR BLOCK', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
-  { id: '11', name: 'PURI CENTRAL', code: 'OD/26', city: 'Puri', state: 'Odisha', status: 'ACTIVE' },
-  { id: '12', name: 'BHUBANESWAR MAIN', code: 'OD/19', city: 'Khordha', state: 'Odisha', status: 'ACTIVE' },
-  { id: '13', name: 'CUTTACK SADAR', code: 'OD/07', city: 'Cuttack', state: 'Odisha', status: 'ACTIVE' }
-];
-
+// 3. Branches List & Realtime Listener (100% Live from Firebase Firestore)
 export const getBranches = async (): Promise<any[]> => {
   try {
     const snap = await getDocs(collection(db, 'branches'));
-    if (!snap.empty) {
-      const dbBranches = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Merge with default Ayodhya Dham branch if not present
-      const hasAyodhya = dbBranches.some((b: any) => b.code?.startsWith('UP/AY') || b.name?.includes('अयोध्या'));
-      if (!hasAyodhya) {
-        return [DEFAULT_BRANCHES[1], ...dbBranches];
-      }
-      return dbBranches;
-    }
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   } catch (e) {
-    console.warn('Fallback to default branches');
+    console.error('Error fetching branches from Firestore:', e);
+    return [];
   }
-  return DEFAULT_BRANCHES;
 };
 
 // Real-time live branch listener for immediate updates across all components
 export const subscribeToBranches = (callback: (branches: any[]) => void) => {
   try {
     const unsub = onSnapshot(collection(db, 'branches'), (snap) => {
-      if (!snap.empty) {
-        const dbBranches = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        const hasAyodhya = dbBranches.some((b: any) => b.code?.startsWith('UP/AY') || b.name?.includes('अयोध्या'));
-        const combined = hasAyodhya ? dbBranches : [DEFAULT_BRANCHES[1], ...dbBranches];
-        callback(combined);
-      } else {
-        callback(DEFAULT_BRANCHES);
-      }
+      const dbBranches = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      callback(dbBranches);
     }, (err) => {
-      console.warn('Branch subscription error, using defaults:', err);
-      callback(DEFAULT_BRANCHES);
+      console.error('Branch subscription error from Firestore:', err);
+      callback([]);
     });
     return unsub;
   } catch (e) {
-    callback(DEFAULT_BRANCHES);
+    callback([]);
     return () => {};
   }
 };
@@ -293,9 +262,16 @@ export const getDonations = async () => {
   return [];
 };
 
-export const updateDonationStatus = async (id: string, status: string) => {
+export const updateDonationStatus = async (id: string, status: string, reason?: string, verifierName?: string) => {
   try {
-    await updateDoc(doc(db, 'donations', id), { status });
+    const updatePayload: any = { 
+      status,
+      verified_at: new Date().toISOString()
+    };
+    if (reason) updatePayload.rejection_reason = reason;
+    if (verifierName) updatePayload.verified_by_name = verifierName;
+
+    await updateDoc(doc(db, 'donations', id), updatePayload);
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };
@@ -366,9 +342,109 @@ export const getUsers = async () => {
   }
 };
 
+export const deleteUser = async (id: string) => {
+  try {
+    await deleteDoc(doc(db, 'members', id));
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+};
+
 export const updateUser = async (id: string, updates: any) => {
   try {
-    await updateDoc(doc(db, 'members', id), updates);
+    await updateDoc(doc(db, 'members', id), {
+      ...updates,
+      updated_at: new Date().toISOString()
+    });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+};
+
+// 12. Complete Firestore Inventory Management
+export const getInventoryData = async () => {
+  try {
+    const [invSnap, logsSnap] = await Promise.all([
+      getDocs(collection(db, 'inventory')),
+      getDocs(query(collection(db, 'inventory_logs'), orderBy('created_at', 'desc'), limit(50)))
+    ]);
+
+    const inventoryList = invSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const logsList = logsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return { inventory: inventoryList, logs: logsList };
+  } catch (err) {
+    console.error('Error fetching inventory:', err);
+    return { inventory: [], logs: [] };
+  }
+};
+
+export const saveInventoryDispatch = async (data: {
+  branch_id: string;
+  branch_name?: string;
+  item_name: string;
+  quantity: number;
+  type: string;
+  notes?: string;
+}) => {
+  try {
+    // 1. Log transaction
+    await addDoc(collection(db, 'inventory_logs'), {
+      ...data,
+      created_at: new Date().toISOString()
+    });
+
+    // 2. Update stock
+    const invRef = doc(db, 'inventory', `${data.branch_id}_${data.item_name}`);
+    const invSnap = await getDoc(invRef);
+    const currentQty = invSnap.exists() ? (invSnap.data().quantity || 0) : 0;
+    const newQty = data.type === 'CREDIT' ? (currentQty + data.quantity) : Math.max(0, currentQty - data.quantity);
+
+    await setDoc(invRef, {
+      branch_id: data.branch_id,
+      branch_name: data.branch_name || '',
+      item_name: data.item_name,
+      quantity: newQty,
+      updated_at: new Date().toISOString()
+    }, { merge: true });
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+};
+
+export const updateInventoryStock = async (branchId: string, itemName: string, quantity: number, branchName?: string) => {
+  try {
+    const invRef = doc(db, 'inventory', `${branchId}_${itemName}`);
+    await setDoc(invRef, {
+      branch_id: branchId,
+      branch_name: branchName || '',
+      item_name: itemName,
+      quantity: quantity,
+      updated_at: new Date().toISOString()
+    }, { merge: true });
+
+    await addDoc(collection(db, 'inventory_logs'), {
+      branch_id: branchId,
+      branch_name: branchName || '',
+      item_name: itemName,
+      quantity: quantity,
+      type: 'ADJUSTMENT',
+      notes: 'Manual Adjustment by Admin',
+      created_at: new Date().toISOString()
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+};
+
+export const deleteInventoryLog = async (logId: string) => {
+  try {
+    await deleteDoc(doc(db, 'inventory_logs', logId));
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };

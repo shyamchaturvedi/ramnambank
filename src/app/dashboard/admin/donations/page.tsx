@@ -14,13 +14,20 @@ import {
   ArrowRight,
   Loader2
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getDonations, updateDonationStatus } from '@/services/dataService';
-import { supabase } from '@/lib/supabase';
+import { auth } from '@/lib/firebase';
 
 export default function DonationManagementPage() {
   const [donations, setDonations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [toast, setToast] = useState<{ show: boolean; msg: string; type: 'success' | 'error' }>({ show: false, msg: '', type: 'success' });
+
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ show: true, msg, type });
+    setTimeout(() => setToast({ show: false, msg: '', type: 'success' }), 3500);
+  };
 
   const loadDonations = async () => {
     setLoading(true);
@@ -34,11 +41,13 @@ export default function DonationManagementPage() {
   }, []);
 
   const handleApprove = async (id: string) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const res = await updateDonationStatus(id, 'APPROVED');
+    const verifier = auth.currentUser?.email || 'केन्द्रीय व्यवस्थापक';
+    const res = await updateDonationStatus(id, 'APPROVED', undefined, verifier);
     if (res.success) {
-      await supabase.from('donations').update({ verified_by_name: session?.user.email }).eq('id', id);
+      showToast('✅ दान रसीद सफलतापूर्वक स्वीकृत व सत्यापित हो गई!');
       loadDonations();
+    } else {
+      showToast('❌ त्रुटि: ' + res.error, 'error');
     }
   };
 
@@ -46,17 +55,14 @@ export default function DonationManagementPage() {
     const reason = window.prompt('अस्वीकार करने का कारण (Reason for rejection):');
     if (reason === null) return;
 
-    const { data: { session } } = await supabase.auth.getSession();
-    const { error } = await supabase.from('donations').update({ 
-      status: 'REJECTED', 
-      rejection_reason: reason,
-      verified_by_name: session?.user.email 
-    }).eq('id', id);
+    const verifier = auth.currentUser?.email || 'केन्द्रीय व्यवस्थापक';
+    const res = await updateDonationStatus(id, 'REJECTED', reason, verifier);
 
-    if (!error) {
+    if (res.success) {
+      showToast('⚠️ दान प्रविष्टि अस्वीकृत कर दी गई।');
       loadDonations();
     } else {
-      alert('Error: ' + error.message);
+      showToast('❌ त्रुटि: ' + res.error, 'error');
     }
   };
 
@@ -186,6 +192,25 @@ export default function DonationManagementPage() {
             </table>
          </div>
       </div>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast.show && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            className={`fixed bottom-8 right-8 z-[200] px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border font-bold text-xs flex items-center gap-3 ${
+              toast.type === 'error'
+                ? 'bg-red-950/90 border-red-500/50 text-red-200'
+                : 'bg-[#12100E]/95 border-saffron/50 text-saffron'
+            }`}
+          >
+            <CheckCircle size={18} />
+            <span>{toast.msg}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
