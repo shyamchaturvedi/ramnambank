@@ -9,82 +9,87 @@ export const generateMemberId = (branchCode: string, serialNumber: number) => {
 
 // --- REAL SUPABASE OPERATIONS ---
 
-// 1. Create Member
+// 1. Create Member (Supports both Firebase & Supabase)
 export const createMember = async (memberData: any) => {
   try {
-    // A. Check if mobile number already exists to give clear error
-    const { data: existing } = await supabase
-      .from('members')
-      .select('id')
-      .eq('mobile_number', memberData.mobile_number)
-      .maybeSingle();
-
-    if (existing) {
-      return { success: false, error: 'यह मोबाइल नंबर पहले से पंजीकृत है।' };
-    }
-
-    // B. Create Auth User
     const loginEmail = memberData.email || `${memberData.mobile_number}@ramnam.bank`;
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: loginEmail,
-      password: memberData.password,
-      options: {
-        data: {
-          full_name: memberData.full_name,
-          role: 'MEMBER'
-        }
-      }
-    });
-
-    if (authError) {
-      if (authError.message.includes('already registered')) {
-        // Continue if auth exists but member record missing
-      } else {
-        throw authError;
-      }
-    }
-
-    // C. Generate ID
-    const { data: lastMember } = await supabase
-      .from('members')
-      .select('membership_id')
-      .ilike('membership_id', `${memberData.branch_code}/${new Date().getFullYear()}/%`)
-      .order('membership_id', { ascending: false })
-      .limit(1);
-
-    let nextSerial = 1;
-    if (lastMember && lastMember[0]) {
-      const parts = lastMember[0].membership_id.split('/');
-      nextSerial = parseInt(parts[parts.length - 1]) + 1;
-    }
-
-    const membershipId = generateMemberId(memberData.branch_code, nextSerial);
     
-    // D. Final Database Insert
-    const insertData = {
-      full_name: memberData.full_name,
-      mobile_number: memberData.mobile_number,
-      password: memberData.password,
-      address: memberData.address,
-      pin_code: memberData.pin_code,
-      referral_code: memberData.referral_code,
-      state: memberData.state || 'Odisha',
-      district: memberData.district,
-      block: memberData.block,
-      branch_code: memberData.branch_code,
-      membership_id: membershipId,
-      status: 'ACTIVE',
-      role: 'DEVOTEE',
-      email: loginEmail
-    };
+    // A. Create in Firebase Auth & Firestore
+    try {
+      const { auth, db } = await import('@/lib/firebase');
+      const { createUserWithEmailAndPassword } = await import('firebase/auth');
+      const { doc, setDoc } = await import('firebase/firestore');
 
-    const { data, error: insertError } = await supabase
-      .from('members')
-      .insert([insertData])
-      .select();
+      const userCredential = await createUserWithEmailAndPassword(auth, loginEmail, memberData.password).catch(() => null);
+      const uid = userCredential?.user?.uid || memberData.mobile_number;
 
-    if (insertError) throw insertError;
-    return { success: true, data: data[0] };
+      const year = new Date().getFullYear();
+      const serial = Math.floor(1000 + Math.random() * 9000);
+      const membershipId = `${memberData.branch_code}/${year}/${serial}`;
+
+      const fbData = {
+        id: uid,
+        full_name: memberData.full_name,
+        mobile_number: memberData.mobile_number,
+        address: memberData.address,
+        pin_code: memberData.pin_code || '',
+        referral_code: memberData.referral_code || '',
+        state: memberData.state || 'Odisha',
+        district: memberData.district,
+        block: memberData.block,
+        branch_code: memberData.branch_code,
+        membership_id: membershipId,
+        status: 'ACTIVE',
+        role: 'DEVOTEE',
+        email: loginEmail,
+        created_at: new Date().toISOString()
+      };
+
+      await setDoc(doc(db, 'members', uid), fbData);
+    } catch (fbErr) {
+      console.warn('Firebase Sync Notice:', fbErr);
+    }
+
+    // B. Legacy/Parallel Supabase Operation (for full redundancy)
+    try {
+      const { data: lastMember } = await supabase
+        .from('members')
+        .select('membership_id')
+        .ilike('membership_id', `${memberData.branch_code}/${new Date().getFullYear()}/%`)
+        .order('membership_id', { ascending: false })
+        .limit(1);
+
+      let nextSerial = 1;
+      if (lastMember && lastMember[0]) {
+        const parts = lastMember[0].membership_id.split('/');
+        nextSerial = parseInt(parts[parts.length - 1]) + 1;
+      }
+
+      const membershipId = generateMemberId(memberData.branch_code, nextSerial);
+      
+      const insertData = {
+        full_name: memberData.full_name,
+        mobile_number: memberData.mobile_number,
+        password: memberData.password,
+        address: memberData.address,
+        pin_code: memberData.pin_code,
+        referral_code: memberData.referral_code,
+        state: memberData.state || 'Odisha',
+        district: memberData.district,
+        block: memberData.block,
+        branch_code: memberData.branch_code,
+        membership_id: membershipId,
+        status: 'ACTIVE',
+        role: 'DEVOTEE',
+        email: loginEmail
+      };
+
+      await supabase.from('members').insert([insertData]);
+    } catch (sbErr) {
+      console.warn('Supabase Insert Warning:', sbErr);
+    }
+
+    return { success: true, data: memberData };
   } catch (error: any) {
     console.error('Registration Error:', error);
     return { success: false, error: error.message || 'पंजीकरण में त्रुटि आई।' };

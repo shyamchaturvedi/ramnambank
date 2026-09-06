@@ -125,13 +125,13 @@ export default function DashboardLayout({
   const menuGroups = {
     ADMIN: [
       { name: 'ओवरव्यू', icon: LayoutDashboard, href: '/dashboard/admin' },
+      { name: 'दैनिक रिपोर्ट्स', icon: LayoutDashboard, href: '/dashboard/admin/reports' },
+      { name: 'सदस्यता एवं पेमेंट', icon: Award, href: '/dashboard/admin/membership-requests' },
       { name: 'यूजर मैनेजमेंट', icon: Users, href: '/dashboard/admin/users' },
-      { name: 'सदस्यता रिक्वेस्ट', icon: Award, href: '/dashboard/admin/membership-requests' },
       { name: 'रेफरल ट्री', icon: Share2, href: '/dashboard/admin/referrals' },
       { name: 'शाखा प्रबंधन', icon: Building2, href: '/dashboard/admin/branches' },
       { name: 'बल्क अपलोड', icon: Upload, href: '/dashboard/admin/bulk-upload' },
       { name: 'दान प्रबंधन', icon: IndianRupee, href: '/dashboard/admin/donations' },
-      { name: 'संग्रह एवं सत्यापन', icon: CheckCircle2, href: '/dashboard/volunteer/verify' },
       { name: 'ग्लोबल स्टॉक कंट्रोल', icon: Box, href: '/dashboard/admin/inventory' },
       { name: 'मास्टर सेटिंग्स', icon: Settings, href: '/dashboard/admin/settings' },
     ],
@@ -147,8 +147,9 @@ export default function DashboardLayout({
     ],
     DEVOTEE: [
       { name: 'मेरा संचय', icon: LayoutDashboard, href: '/dashboard/devotee' },
+      { name: 'डिजिटल पास (ID)', icon: Award, href: '/dashboard/devotee/pass' },
       { name: 'मेरा प्रोफाइल', icon: User, href: '/dashboard/devotee/profile' },
-      { name: 'सदस्यता', icon: Award, href: '/dashboard/devotee/membership' },
+      { name: 'सदस्यता प्लान', icon: Award, href: '/dashboard/devotee/membership' },
       { name: 'मेरा लेजर', icon: FileSearch, href: '/dashboard/devotee/ledger' },
     ]
   };
