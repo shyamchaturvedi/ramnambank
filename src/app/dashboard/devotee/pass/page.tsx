@@ -15,16 +15,13 @@ export default function DevoteePassPage() {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session && session.user.email) {
-          const { data: member } = await supabase
-            .from('members')
-            .select('*')
-            .ilike('email', session.user.email.trim())
-            .maybeSingle();
-
-          if (member) {
-            setProfile(member);
+        const { auth, db } = await import('@/lib/firebase');
+        const { doc, getDoc } = await import('firebase/firestore');
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          const snap = await getDoc(doc(db, 'members', currentUser.uid));
+          if (snap.exists()) {
+            setProfile(snap.data());
           }
         }
       } catch (err) {

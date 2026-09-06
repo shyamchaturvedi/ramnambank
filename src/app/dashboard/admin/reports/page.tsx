@@ -35,28 +35,31 @@ export default function ReportsPage() {
   const loadReportData = async () => {
     setLoading(true);
     try {
-      // 1. Fetch Membership Requests (Orders)
-      const { data: orders } = await supabase
-        .from('membership_requests')
-        .select(`
-          *,
-          members:user_id (
-            full_name,
-            mobile_number,
-            membership_id,
-            district,
-            block
-          )
-        `)
-        .order('created_at', { ascending: false });
+      const { db } = await import('@/lib/firebase');
+      const { collection, getDocs, doc, getDoc } = await import('firebase/firestore');
 
-      // 2. Fetch Donations / Payments
-      const { data: donations } = await supabase
-        .from('donations')
-        .select('*');
+      const reqSnap = await getDocs(collection(db, 'membership_requests'));
+      const allOrders = await Promise.all(
+        reqSnap.docs.map(async (d) => {
+          const reqData = d.data();
+          let memberInfo: any = {};
+          try {
+            if (reqData.user_id) {
+              const memSnap = await getDoc(doc(db, 'members', reqData.user_id));
+              if (memSnap.exists()) memberInfo = memSnap.data();
+            }
+          } catch (e) {}
 
-      const allOrders = orders || [];
-      const allDonations = donations || [];
+          return {
+            id: d.id,
+            ...reqData,
+            members: memberInfo
+          };
+        })
+      );
+
+      const donSnap = await getDocs(collection(db, 'donations'));
+      const allDonations = donSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
       // Calculate Dates
       const now = new Date();

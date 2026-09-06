@@ -54,61 +54,31 @@ export default function DashboardLayout({
   const [pendingRequest, setPendingRequest] = useState<any>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
-  // 1. Mounted Check & User Data Fetch
+  // 1. Mounted Check & User Data Fetch with Firebase
   useEffect(() => {
     setMounted(true);
     const fetchUserAndNotifications = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session && session.user.email) {
-        console.log("SESSION FOUND:", session.user.email);
-        const { data: member, error: memberError } = await supabase
-          .from('members')
-          .select('*')
-          .ilike('email', session.user.email.trim())
-          .maybeSingle();
+      try {
+        const { auth, db } = await import('@/lib/firebase');
+        const { doc, getDoc, collection, query, where, getDocs } = await import('firebase/firestore');
         
-        if (memberError) console.error("MEMBER FETCH ERROR:", memberError);
-        console.log("MEMBER FOUND:", member);
-        
-        if (member) {
-          setUserName(member.full_name);
-          setProfileData(member);
-
-          // Check for pending membership request
-          const { data: pendingReq } = await supabase
-            .from('membership_requests')
-            .select('*')
-            .eq('user_id', member.id)
-            .eq('status', 'PENDING')
-            .maybeSingle();
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          setUserName(currentUser.displayName || currentUser.email?.split('@')[0] || 'भक्त');
           
-          if (pendingReq) setPendingRequest(pendingReq);
-          
-          // Initial Fetch for Notifications
-          const { data: notifs } = await supabase
-            .from('notifications')
-            .select('*')
-            .eq('user_id', member.id)
-            .order('created_at', { ascending: false });
-          
-          if (notifs) setNotifications(notifs);
-
-          // Real-time Subscription
-          const channel = supabase
-            .channel(`notifications_${member.id}`)
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload) => {
-               if (payload.new.user_id === member.id) {
-                  setNotifications(prev => [payload.new, ...prev]);
-               }
-            })
-            .subscribe();
-
-          setIsLoadingProfile(false);
-          return () => supabase.removeChannel(channel);
-        } else {
-          console.warn("NO MEMBER RECORD FOUND FOR EMAIL:", session.user.email);
-          setIsLoadingProfile(false);
+          try {
+            const userDoc = await getDoc(doc(db, 'members', currentUser.uid));
+            if (userDoc.exists()) {
+              const data = userDoc.data();
+              setUserName(data.full_name || currentUser.displayName || 'भक्त');
+              setProfileData(data);
+            }
+          } catch (e) {}
         }
+      } catch (err) {
+        console.error("Dashboard User Fetch Error:", err);
+      } finally {
+        setIsLoadingProfile(false);
       }
     };
     fetchUserAndNotifications();

@@ -49,14 +49,12 @@ export default function MembershipPage() {
   const fetchHistory = async (uid: string) => {
     setIsLoadingHistory(true);
     try {
-      const { data, error } = await supabase
-        .from('membership_requests')
-        .select('*')
-        .eq('user_id', uid)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      setHistory(data || []);
+      const { db } = await import('@/lib/firebase');
+      const { collection, query, where, getDocs } = await import('firebase/firestore');
+      const q = query(collection(db, 'membership_requests'), where('user_id', '==', uid));
+      const snap = await getDocs(q);
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setHistory(list);
     } catch (err) {
       console.error('History fetch error:', err);
     } finally {
@@ -66,51 +64,45 @@ export default function MembershipPage() {
 
   useEffect(() => {
     const loadInitialData = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session && session.user.email) {
-        const { data: member } = await supabase
-          .from('members')
-          .select('id')
-          .ilike('email', session.user.email.trim())
-          .maybeSingle();
-        
-        if (member) {
-          setUserId(member.id);
-          fetchHistory(member.id);
+      try {
+        const { auth } = await import('@/lib/firebase');
+        const user = auth.currentUser;
+        if (user) {
+          setUserId(user.uid);
+          fetchHistory(user.uid);
         }
-      }
-
-      const { data: settings } = await supabase.from('system_settings').select('upi_id').limit(1).maybeSingle();
-      if (settings?.upi_id) {
-        setAdminUpi(settings.upi_id);
-      }
+      } catch (e) {}
     };
     loadInitialData();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedPlan || !utrNumber || !userId) return;
+    if (!selectedPlan || !utrNumber) return;
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from('membership_requests').insert([{
-        user_id: userId,
+      const { db, auth } = await import('@/lib/firebase');
+      const { collection, addDoc } = await import('firebase/firestore');
+      
+      const currentUid = userId || auth.currentUser?.uid || 'GUEST_' + Date.now();
+      
+      await addDoc(collection(db, 'membership_requests'), {
+        user_id: currentUid,
         plan_name: selectedPlan.name,
         amount: selectedPlan.amount,
         transaction_id: utrNumber,
-        status: 'PENDING'
-      }]);
+        status: 'PENDING',
+        created_at: new Date().toISOString()
+      });
 
-      if (error) throw error;
-      
       setIsSuccess(true);
-      fetchHistory(userId); // Refresh history
+      fetchHistory(currentUid);
       setTimeout(() => {
         setIsSuccess(false);
         setSelectedPlan(null);
         setUtrNumber('');
-      }, 5000);
+      }, 4000);
     } catch (err) {
       console.error('Membership Error:', err);
       alert('अनुरोध भेजने में समस्या आई। कृपया बाद में प्रयास करें।');

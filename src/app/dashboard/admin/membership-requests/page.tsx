@@ -23,24 +23,30 @@ export default function MembershipRequestsPage() {
   const fetchRequests = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('membership_requests')
-        .select(`
-          *,
-          members:user_id (
-            id,
-            full_name,
-            email,
-            mobile_number,
-            membership_id,
-            block,
-            district
-          )
-        `)
-        .order('created_at', { ascending: false });
+      const { db } = await import('@/lib/firebase');
+      const { collection, getDocs, doc, getDoc } = await import('firebase/firestore');
 
-      if (error) throw error;
-      setRequests(data || []);
+      const reqSnap = await getDocs(collection(db, 'membership_requests'));
+      const reqList = await Promise.all(
+        reqSnap.docs.map(async (d) => {
+          const reqData = d.data();
+          let memberInfo: any = {};
+          try {
+            if (reqData.user_id) {
+              const memSnap = await getDoc(doc(db, 'members', reqData.user_id));
+              if (memSnap.exists()) memberInfo = memSnap.data();
+            }
+          } catch (e) {}
+
+          return {
+            id: d.id,
+            ...reqData,
+            members: memberInfo
+          };
+        })
+      );
+
+      setRequests(reqList);
     } catch (err) {
       console.error('Error fetching requests:', err);
     } finally {
@@ -57,34 +63,30 @@ export default function MembershipRequestsPage() {
     
     setProcessingId(id);
     try {
-      const { error: reqError } = await supabase
-        .from('membership_requests')
-        .update({ 
-          status: 'APPROVED',
-          payment_status: 'COLLECTED',
-          verified_at: new Date().toISOString()
-        })
-        .eq('id', id);
+      const { db } = await import('@/lib/firebase');
+      const { doc, updateDoc, addDoc, collection } = await import('firebase/firestore');
 
-      if (reqError) throw new Error(`अपडेट फेल: ${reqError.message}`);
+      await updateDoc(doc(db, 'membership_requests', id), {
+        status: 'APPROVED',
+        payment_status: 'COLLECTED',
+        verified_at: new Date().toISOString()
+      });
 
       let membershipType = 'BANK_LIFE';
       if (planName.includes('विशेष')) membershipType = 'SPECIAL_LIFE';
       else if (planName.includes('आजीवन') && !planName.includes('बैंक')) membershipType = 'LIFE';
 
-      const { error: memberError } = await supabase
-        .from('members')
-        .update({ 
-          membership_type: membershipType, 
-          status: 'ACTIVE',
-          payment_status: 'PAID'
-        })
-        .eq('id', userId);
+      if (userId) {
+        try {
+          await updateDoc(doc(db, 'members', userId), {
+            membership_type: membershipType,
+            status: 'ACTIVE',
+            payment_status: 'PAID'
+          });
+        } catch (e) {}
+      }
 
-      if (memberError) throw new Error(`मेंबर स्टेटस अपडेट फेल: ${memberError.message}`);
-
-      // Record donation / revenue transaction
-      await supabase.from('donations').insert([{
+      await addDoc(collection(db, 'donations'), {
         donor_name: requests.find(r => r.id === id)?.members?.full_name || 'भक्त',
         amount: amount,
         donation_type: 'MEMBERSHIP_FEE',
@@ -92,15 +94,8 @@ export default function MembershipRequestsPage() {
         status: 'APPROVED',
         verified_by_name: 'Admin Central',
         created_at: new Date().toISOString()
-      }]);
+      });
 
-      await supabase.from('notifications').insert([{
-        user_id: userId,
-        title: 'सदस्यता पास सक्रिय (Pass Activated)',
-        message: `जय श्री राम! आपकी '${planName}' सदस्यता का भुगतान प्राप्त हो गया है और आपका डिजिटल पास सक्रिय कर दिया गया है।`,
-        type: 'SUCCESS'
-      }]);
-      
       alert('सदस्यता पास सफलतापूर्वक सक्रिय हो गया और पेमेंट कलेक्टेड मार्क हो गया!');
       fetchRequests();
     } catch (err: any) {
@@ -116,17 +111,13 @@ export default function MembershipRequestsPage() {
 
     setProcessingId(id);
     try {
-      await supabase
-        .from('membership_requests')
-        .update({ status: 'REJECTED', rejection_reason: reason })
-        .eq('id', id);
+      const { db } = await import('@/lib/firebase');
+      const { doc, updateDoc } = await import('firebase/firestore');
 
-      await supabase.from('notifications').insert([{
-        user_id: userId,
-        title: 'सदस्यता अस्वीकृत',
-        message: `आपकी सदस्यता रिक्वेस्ट अस्वीकृत कर दी गई है। कारण: ${reason}`,
-        type: 'ERROR'
-      }]);
+      await updateDoc(doc(db, 'membership_requests', id), {
+        status: 'REJECTED',
+        rejection_reason: reason
+      });
 
       fetchRequests();
     } catch (err: any) {
