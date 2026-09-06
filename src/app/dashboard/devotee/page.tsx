@@ -14,7 +14,11 @@ import {
   MapPin,
   Shield,
   Zap,
-  Loader2
+  Loader2,
+  Truck,
+  Package,
+  Clock,
+  ExternalLink
 } from 'lucide-react';
 import { getMemberBookletHistory } from '@/services/dataService';
 import { useRole } from '@/components/RoleContext';
@@ -30,34 +34,60 @@ export default function DevoteeDashboard() {
 
   useEffect(() => {
     setMounted(true);
-    
+    let unsubscribe = () => {};
+
     const loadData = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          const { data: member } = await supabase
-            .from('members')
-            .select('*')
-            .eq('email', session.user.email)
-            .maybeSingle();
-            
-          if (member) {
-            setMemberId(member.membership_id);
-            setProfileData(member);
-            const historyData = await getMemberBookletHistory(member.id);
-            setHistory(historyData);
-          } else {
-            setProfileData(null);
+        const { auth, db } = await import('@/lib/firebase');
+        const { onAuthStateChanged } = await import('firebase/auth');
+        const { doc, getDoc, collection, query, where, getDocs } = await import('firebase/firestore');
+
+        unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+          if (currentUser) {
+            try {
+              let userDoc = await getDoc(doc(db, 'members', currentUser.uid));
+              let member = userDoc.exists() ? userDoc.data() : null;
+
+              if (!member && currentUser.email) {
+                const q = query(collection(db, 'members'), where('email', '==', currentUser.email));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                  member = snap.docs[0].data();
+                }
+              }
+
+              const thisYear = new Date().getFullYear();
+              if (member) {
+                setMemberId(member.membership_id || `OD/17/${thisYear}/001`);
+                setProfileData(member);
+                
+                // Get submission history from Firestore
+                try {
+                  const histQ = query(collection(db, 'booklet_submissions'), where('user_id', '==', currentUser.uid));
+                  const histSnap = await getDocs(histQ);
+                  setHistory(histSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+                } catch(e) {}
+              } else {
+                setProfileData({
+                  id: currentUser.uid,
+                  full_name: currentUser.displayName || 'भक्त',
+                  role: 'DEVOTEE',
+                  status: 'ACTIVE',
+                  membership_type: 'BANK_LIFE'
+                });
+              }
+            } catch (e) {}
           }
-        }
+          setIsLoading(false);
+        });
       } catch (err) {
         console.error('Devotee Dashboard Load Error:', err);
-      } finally {
         setIsLoading(false);
       }
     };
 
     loadData();
+    return () => unsubscribe();
   }, []);
 
   if (isLoading) {
@@ -69,32 +99,8 @@ export default function DevoteeDashboard() {
     );
   }
 
-  // Hard Lock Logic: If no membership or overdue, show ONLY the lock screen
-  if (!profileData?.membership_type || profileData?.is_overdue) {
-    return (
-      <div className="min-h-[70vh] flex items-center justify-center p-6">
-        <div className="premium-card p-10 md:p-16 max-w-xl border-red-500/30 space-y-8 animate-zoom-in shadow-[0_0_50px_rgba(239,68,68,0.2)] text-center">
-          <div className="w-24 h-24 bg-red-500/20 rounded-full flex items-center justify-center text-red-500 mx-auto animate-bounce">
-            <Zap size={48} />
-          </div>
-          <div className="space-y-4">
-            <h2 className="text-3xl font-black text-white uppercase tracking-widest">सदस्यता अनिवार्य है</h2>
-            <p className="text-sm text-white/60 font-bold uppercase leading-relaxed">
-              {!profileData?.membership_type 
-                ? "पोर्टल की सेवाओं का उपयोग करने के लिए कृपया राम नाम बैंक की सदस्यता लें।" 
-                : "आपका वार्षिक रखरखाव शुल्क (₹108) लंबित है। सेवाओं को जारी रखने के लिए भुगतान पूर्ण करें।"}
-            </p>
-          </div>
-          <button 
-            onClick={() => router.push('/dashboard/devotee/membership')}
-            className="w-full py-5 bg-red-500 text-black font-black uppercase text-xs rounded-2xl shadow-[0_10px_20px_rgba(239,68,68,0.3)] hover:scale-105 transition-all"
-          >
-            {!profileData?.membership_type ? "अभी सदस्यता लें" : "अभी नवीनीकृत करें"}
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const deliveryStatus = profileData?.delivery_status || (profileData?.status === 'ACTIVE' ? 'PROCESSING' : 'PENDING');
+  const isKitDispatched = deliveryStatus === 'DISPATCHED' || deliveryStatus === 'DELIVERED';
 
   return (
     <div className="space-y-10 pb-20">
@@ -138,12 +144,102 @@ export default function DevoteeDashboard() {
             <div className="text-[10px] font-black uppercase tracking-widest text-saffron px-6 py-3 bg-saffron/10 rounded-full mt-4 flex items-center gap-3 border border-saffron/30 shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:scale-105 transition-all cursor-default group/tag">
               <Star size={14} className="animate-pulse text-saffron" />
               <span className="gold-text">
-                {profileData?.membership_type === 'REGULAR' ? 'साधारण सदस्य' : 
-                 profileData?.membership_type === 'LIFE' ? 'आजीवन सदस्य' : 
-                 profileData?.membership_type || 'साधारण सदस्य'}
+                {profileData?.membership_type === 'SPECIAL_LIFE' ? 'केन्द्रीय विशिष्ट आजीवन सदस्य' : 
+                 profileData?.membership_type === 'LIFE' ? 'केन्द्रीय आजीवन सदस्य' : 
+                 profileData?.membership_type === 'BANK_LIFE' ? 'श्री राम नाम लिखन सदस्य' : 
+                 profileData?.membership_type === 'REGULAR' ? 'साधारण सदस्य' : 
+                 profileData?.membership_type || 'श्री राम नाम लिखन सदस्य'}
               </span>
               <span className={`w-2 h-2 rounded-full animate-pulse ${profileData?.is_overdue ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]' : 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.8)]'}`}></span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Welcome Kit / Booklet Order Tracking Card */}
+      <div className="premium-card p-8 bg-gradient-to-r from-blue-500/10 via-saffron/5 to-transparent border-blue-500/20 relative overflow-hidden">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+              <Truck size={24} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-black text-white uppercase tracking-wider">स्वागत किट एवं पुस्तिका आर्डर स्थिति</h3>
+                <span className="text-[9px] font-black px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 uppercase">
+                  Welcome Kit & Pen
+                </span>
+              </div>
+              <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest mt-0.5">
+                राम नाम लेखन पुस्तिका एवं विशेष कलम डिलीवरी ट्रैकिंग
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {deliveryStatus === 'DELIVERED' ? (
+              <span className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-2 shadow-sm">
+                <CheckCircle2 size={14} /> सुरक्षित डिलीवर हुआ
+              </span>
+            ) : deliveryStatus === 'DISPATCHED' ? (
+              <span className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-2 shadow-sm animate-pulse">
+                <Truck size={14} /> डाक / कुरियर द्वारा रवाना
+              </span>
+            ) : (
+              <span className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-2">
+                <Package size={14} /> किट पैकिंग / तैयारी में
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Tracking Timeline Steps */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-white/5">
+          <div className={`p-4 rounded-2xl border transition-all ${
+            profileData?.status === 'ACTIVE' 
+              ? 'bg-green-500/5 border-green-500/20 text-green-400' 
+              : 'bg-white/5 border-white/10 text-white/40'
+          }`}>
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle2 size={16} />
+              <span className="text-xs font-black uppercase tracking-wider">1. सदस्यता स्वीकृत</span>
+            </div>
+            <p className="text-[10px] text-white/50 leading-relaxed">
+              {profileData?.status === 'ACTIVE' ? 'भुगतान सत्यापित एवं पास सक्रिय' : 'पेमेंट सत्यापन शेष'}
+            </p>
+          </div>
+
+          <div className={`p-4 rounded-2xl border transition-all ${
+            deliveryStatus === 'DISPATCHED' || deliveryStatus === 'DELIVERED'
+              ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' 
+              : deliveryStatus === 'PROCESSING'
+              ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+              : 'bg-white/5 border-white/10 text-white/40'
+          }`}>
+            <div className="flex items-center gap-2 mb-1">
+              <Truck size={16} />
+              <span className="text-xs font-black uppercase tracking-wider">2. पार्सल डिस्पैच</span>
+            </div>
+            <p className="text-[10px] text-white/50 leading-relaxed font-sans">
+              {profileData?.kit_courier_name ? `${profileData.kit_courier_name}` : 'अयोध्या धाम मुख्यालय द्वारा प्रेषित'}
+              {profileData?.kit_tracking_id && <span className="block font-mono text-white/80 font-bold mt-0.5">TRK: {profileData.kit_tracking_id}</span>}
+            </p>
+          </div>
+
+          <div className={`p-4 rounded-2xl border transition-all ${
+            deliveryStatus === 'DELIVERED' 
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+              : 'bg-white/5 border-white/10 text-white/40'
+          }`}>
+            <div className="flex items-center gap-2 mb-1">
+              <Package size={16} />
+              <span className="text-xs font-black uppercase tracking-wider">3. घर पर डिलीवरी</span>
+            </div>
+            <p className="text-[10px] text-white/50 leading-relaxed font-sans">
+              {profileData?.address_line 
+                ? `${profileData.address_line}${profileData.pincode ? ` (${profileData.pincode})` : ''}` 
+                : 'पंजीकृत पते पर डाक द्वारा वितरण'}
+            </p>
           </div>
         </div>
       </div>

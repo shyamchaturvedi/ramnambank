@@ -12,19 +12,18 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
-import { getBranches } from '@/services/dataService';
+import { getBranches, subscribeToBranches } from '@/services/dataService';
 
 export default function BranchesClient() {
   const [branches, setBranches] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const loadData = async () => {
-      const data = await getBranches();
+    const unsub = subscribeToBranches((data) => {
       setBranches(data);
       setLoading(false);
-    };
-    loadData();
+    });
+    return () => unsub();
   }, []);
 
   return (

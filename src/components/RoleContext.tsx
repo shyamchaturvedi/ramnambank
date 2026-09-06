@@ -27,23 +27,21 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
         if (currentUser) {
           setUser(currentUser);
           
-          // Check Admin by email
-          if (currentUser.email === 'iammshyam@gmail.com' || currentUser.email?.includes('admin')) {
-            setRole('ADMIN');
-          } else {
-            // Check Firestore doc
-            try {
-              const userDoc = await getDoc(doc(db, 'members', currentUser.uid));
-              if (userDoc.exists()) {
-                const data = userDoc.data();
-                if (data.role) {
-                  setRole(data.role.toUpperCase() as Role);
-                }
+          // Check Firestore doc for accurate role
+          try {
+            const userDoc = await getDoc(doc(db, 'members', currentUser.uid));
+            if (userDoc.exists()) {
+              const data = userDoc.data();
+              if (data.role) {
+                setRole(data.role.toUpperCase() as Role);
+              } else {
+                setRole('DEVOTEE');
               }
-            } catch (e) {
-              // fallback default
+            } else {
               setRole('DEVOTEE');
             }
+          } catch (e) {
+            setRole('DEVOTEE');
           }
         } else {
           setUser(null);

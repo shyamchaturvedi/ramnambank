@@ -7,6 +7,8 @@ import {
   setDoc, 
   updateDoc, 
   addDoc, 
+  deleteDoc,
+  onSnapshot,
   query, 
   where, 
   orderBy, 
@@ -14,10 +16,10 @@ import {
 } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 
-// 1. Generate Smart Membership ID
+// 1. Generate Smart Membership ID starting from 001
 export const generateMemberId = (branchCode: string, serialNumber: number) => {
   const year = new Date().getFullYear();
-  const paddedSerial = serialNumber.toString().padStart(4, '0');
+  const paddedSerial = serialNumber.toString().padStart(3, '0');
   return `${branchCode}/${year}/${paddedSerial}`;
 };
 
@@ -37,29 +39,34 @@ export const createMember = async (memberData: any) => {
     }
 
     const year = new Date().getFullYear();
-    const serial = Math.floor(1000 + Math.random() * 9000);
-    const membershipId = `${memberData.branch_code}/${year}/${serial}`;
+    const branchCode = memberData.branch_code || 'OD/17';
+    
+    // Count existing members for this branch to generate sequential ID starting from 001
+    let nextSerial = 1;
+    try {
+      const branchMembersQ = query(collection(db, 'members'), where('branch_code', '==', branchCode));
+      const countSnap = await getDocs(branchMembersQ);
+      nextSerial = countSnap.size + 1;
+    } catch (e) {
+      try {
+        const allSnap = await getDocs(collection(db, 'members'));
+        nextSerial = allSnap.size + 1;
+      } catch (err) {}
+    }
+
+    const paddedSerial = nextSerial.toString().padStart(3, '0');
+    const membershipId = `${branchCode}/${year}/${paddedSerial}`;
 
     const newMember = {
+      ...memberData,
       id: uid,
-      full_name: memberData.full_name,
-      mobile_number: memberData.mobile_number,
-      address: memberData.address,
-      pin_code: memberData.pin_code || '',
-      referral_code: memberData.referral_code || '',
-      state: memberData.state || 'Odisha',
-      district: memberData.district,
-      block: memberData.block,
-      branch_code: memberData.branch_code,
       membership_id: membershipId,
+      branch_code: branchCode,
       status: 'ACTIVE',
-      role: 'DEVOTEE',
-      email: loginEmail,
-      membership_type: 'BANK_LIFE',
       created_at: new Date().toISOString()
     };
 
-    await setDoc(doc(db, 'members', uid), newMember);
+    await setDoc(doc(db, 'members', uid), newMember, { merge: true });
     return { success: true, data: newMember };
   } catch (error: any) {
     console.error('Firebase createMember error:', error);
@@ -67,85 +74,210 @@ export const createMember = async (memberData: any) => {
   }
 };
 
-// 3. Branches List
-export const getBranches = async (): Promise<any[]> => {
-  const defaultBranches = [
-    { id: '1', name: 'KENDRAPARA SUB DIVISION', code: 'OD/17/01', city: 'Kendrapara', state: 'Odisha' },
-    { id: '2', name: 'PATAMUNDAI NAC', code: 'OD/17/02', city: 'Kendrapara', state: 'Odisha' },
-    { id: '3', name: 'ALI BLOCK', code: 'OD/17/03', city: 'Kendrapara', state: 'Odisha' },
-    { id: '4', name: 'DERABISH BLOCK', code: 'OD/17/04', city: 'Kendrapara', state: 'Odisha' },
-    { id: '5', name: 'GARADPUR BLOCK', code: 'OD/17/05', city: 'Kendrapara', state: 'Odisha' },
-    { id: '6', name: 'KENDRAPARA BLOCK', code: 'OD/17/06', city: 'Kendrapara', state: 'Odisha' },
-    { id: '7', name: 'MAHAKALPADA BLOCK', code: 'OD/17/07', city: 'Kendrapara', state: 'Odisha' },
-    { id: '8', name: 'MARSHAGHAI BLOCK', code: 'OD/17/08', city: 'Kendrapara', state: 'Odisha' },
-    { id: '9', name: 'PATAMUNDAI BLOCK', code: 'OD/17/09', city: 'Kendrapara', state: 'Odisha' },
-    { id: '10', name: 'RAJNAGAR BLOCK', code: 'OD/17/10', city: 'Kendrapara', state: 'Odisha' },
-    { id: '11', name: 'PURI CENTRAL', code: 'OD/26/01', city: 'Puri', state: 'Odisha' },
-    { id: '12', name: 'BHUBANESWAR MAIN', code: 'OD/19/01', city: 'Khordha', state: 'Odisha' },
-    { id: '13', name: 'CUTTACK SADAR', code: 'OD/07/01', city: 'Cuttack', state: 'Odisha' }
-  ];
+// 3. Branches List & Realtime Listener
+export const DEFAULT_BRANCHES = [
+  { id: '1', name: 'KENDRAPARA SUB DIVISION', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
+  { id: 'ayodhya-main', name: 'अयोध्या धाम केन्द्रीय मुख्य शाखा', code: 'UP/AY', city: 'Ayodhya', state: 'Uttar Pradesh', status: 'ACTIVE' },
+  { id: '2', name: 'PATAMUNDAI NAC', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
+  { id: '3', name: 'ALI BLOCK', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
+  { id: '4', name: 'DERABISH BLOCK', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
+  { id: '5', name: 'GARADPUR BLOCK', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
+  { id: '6', name: 'KENDRAPARA BLOCK', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
+  { id: '7', name: 'MAHAKALPADA BLOCK', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
+  { id: '8', name: 'MARSHAGHAI BLOCK', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
+  { id: '9', name: 'PATAMUNDAI BLOCK', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
+  { id: '10', name: 'RAJNAGAR BLOCK', code: 'OD/17', city: 'Kendrapara', state: 'Odisha', status: 'ACTIVE' },
+  { id: '11', name: 'PURI CENTRAL', code: 'OD/26', city: 'Puri', state: 'Odisha', status: 'ACTIVE' },
+  { id: '12', name: 'BHUBANESWAR MAIN', code: 'OD/19', city: 'Khordha', state: 'Odisha', status: 'ACTIVE' },
+  { id: '13', name: 'CUTTACK SADAR', code: 'OD/07', city: 'Cuttack', state: 'Odisha', status: 'ACTIVE' }
+];
 
+export const getBranches = async (): Promise<any[]> => {
   try {
     const snap = await getDocs(collection(db, 'branches'));
     if (!snap.empty) {
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const dbBranches = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Merge with default Ayodhya Dham branch if not present
+      const hasAyodhya = dbBranches.some((b: any) => b.code?.startsWith('UP/AY') || b.name?.includes('अयोध्या'));
+      if (!hasAyodhya) {
+        return [DEFAULT_BRANCHES[1], ...dbBranches];
+      }
+      return dbBranches;
     }
   } catch (e) {
     console.warn('Fallback to default branches');
   }
-  return defaultBranches;
+  return DEFAULT_BRANCHES;
 };
 
-// 4. Admin Stats
+// Real-time live branch listener for immediate updates across all components
+export const subscribeToBranches = (callback: (branches: any[]) => void) => {
+  try {
+    const unsub = onSnapshot(collection(db, 'branches'), (snap) => {
+      if (!snap.empty) {
+        const dbBranches = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const hasAyodhya = dbBranches.some((b: any) => b.code?.startsWith('UP/AY') || b.name?.includes('अयोध्या'));
+        const combined = hasAyodhya ? dbBranches : [DEFAULT_BRANCHES[1], ...dbBranches];
+        callback(combined);
+      } else {
+        callback(DEFAULT_BRANCHES);
+      }
+    }, (err) => {
+      console.warn('Branch subscription error, using defaults:', err);
+      callback(DEFAULT_BRANCHES);
+    });
+    return unsub;
+  } catch (e) {
+    callback(DEFAULT_BRANCHES);
+    return () => {};
+  }
+};
+
+// Admin save or update branch in Firestore
+export const saveBranch = async (branchData: any, branchId?: string) => {
+  try {
+    const cleanData = {
+      name: branchData.name || '',
+      code: (branchData.code || '').toUpperCase().trim(),
+      city: branchData.city || '',
+      state: branchData.state || 'Odisha',
+      address: branchData.address || '',
+      phone: branchData.phone || '',
+      status: branchData.status || 'ACTIVE',
+      updated_at: new Date().toISOString()
+    };
+
+    if (branchId) {
+      await updateDoc(doc(db, 'branches', branchId), cleanData);
+      return { success: true, id: branchId };
+    } else {
+      const docRef = await addDoc(collection(db, 'branches'), {
+        ...cleanData,
+        created_at: new Date().toISOString()
+      });
+      return { success: true, id: docRef.id };
+    }
+  } catch (err: any) {
+    console.error('Error saving branch:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+// Admin delete branch from Firestore
+export const deleteBranch = async (branchId: string) => {
+  try {
+    await deleteDoc(doc(db, 'branches', branchId));
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error deleting branch:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+// 4. Admin Stats (Real Live Firestore Data)
 export const getAdminStats = async () => {
   try {
-    const membersSnap = await getDocs(collection(db, 'members'));
-    const donationsSnap = await getDocs(collection(db, 'donations'));
+    const [membersSnap, donationsSnap, bookletsSnap, allBranches] = await Promise.all([
+      getDocs(collection(db, 'members')),
+      getDocs(collection(db, 'donations')),
+      getDocs(collection(db, 'booklet_submissions')),
+      getBranches()
+    ]);
 
-    const totalBhakt = membersSnap.size || 148;
+    const totalBhakt = membersSnap.size;
     const totalDonations = donationsSnap.docs.reduce((sum, d) => sum + (Number(d.data().amount) || 0), 0);
+    const totalBranches = allBranches.length;
+    const totalBooks = bookletsSnap.docs.reduce((sum, d) => sum + (Number(d.data().quantity) || 0), 0);
 
     return {
       totalBhakt,
-      totalBranches: 30,
-      activeBranches: 24,
-      totalBooks: 45200,
-      totalDonations: totalDonations || 36000
+      totalBranches,
+      activeBranches: totalBranches,
+      totalBooks,
+      totalDonations
     };
   } catch (err) {
     return {
-      totalBhakt: 148,
-      totalBranches: 30,
-      activeBranches: 24,
-      totalBooks: 45200,
-      totalDonations: 36000
+      totalBhakt: 0,
+      totalBranches: 0,
+      activeBranches: 0,
+      totalBooks: 0,
+      totalDonations: 0
     };
   }
 };
 
-// 5. Recent Activities
+// 5. Recent Activities (Real Live Feed)
 export const getRecentActivities = async () => {
-  return [
-    { text: "नया भक्त खाता पंजीकृत हुआ (Kendrapara)", time: new Date().toISOString(), type: "USER", color: "text-green-400" },
-    { text: "सदस्यता पास सक्रिय किया गया (Bank Life)", time: new Date().toISOString(), type: "USER", color: "text-saffron" },
-    { text: "अर्चना पुस्तिका वितरण (Puri Branch)", time: new Date().toISOString(), type: "BOOK", color: "text-blue-400" }
-  ];
+  try {
+    const [membersSnap, donationsSnap] = await Promise.all([
+      getDocs(query(collection(db, 'members'), orderBy('created_at', 'desc'), limit(5))),
+      getDocs(query(collection(db, 'donations'), orderBy('created_at', 'desc'), limit(5)))
+    ]);
+
+    const acts: any[] = [];
+    membersSnap.docs.forEach(d => {
+      const data = d.data();
+      acts.push({
+        text: `नया भक्त खाता: ${data.full_name || 'भक्त'} (${data.district || 'Odisha'})`,
+        time: data.created_at || new Date().toISOString(),
+        type: "USER",
+        color: "text-green-400"
+      });
+    });
+
+    donationsSnap.docs.forEach(d => {
+      const data = d.data();
+      acts.push({
+        text: `दान/सदस्यता संग्रह: ₹${(data.amount || 0).toLocaleString()} (${data.donor_name || 'भक्त'})`,
+        time: data.created_at || new Date().toISOString(),
+        type: "DONATION",
+        color: "text-saffron"
+      });
+    });
+
+    acts.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+    return acts.slice(0, 5);
+  } catch (e) {
+    return [];
+  }
 };
 
-// 6. Top Referrals
+// 6. Top Referrals (Real Live Data)
 export const getTopReferrals = async () => {
-  return [
-    { name: "निर्मल रंजन स्वाईं", code: "OD17-01", count: 48 },
-    { name: "सुभाष चंद्र स्वाईं", code: "OD17-07", count: 32 },
-    { name: "प्रशांत कुमार पात्रा", code: "OD17-10", count: 29 }
-  ];
+  try {
+    const membersSnap = await getDocs(collection(db, 'members'));
+    const refMap: { [key: string]: number } = {};
+
+    membersSnap.docs.forEach(d => {
+      const data = d.data();
+      const ref = data.referral_code || data.branch_code;
+      if (ref) {
+        refMap[ref] = (refMap[ref] || 0) + 1;
+      }
+    });
+
+    const list = Object.keys(refMap).map(code => ({
+      name: `शाखा / रेफरल ${code}`,
+      code: code,
+      count: refMap[code]
+    }));
+
+    list.sort((a, b) => b.count - a.count);
+    return list.slice(0, 5);
+  } catch {
+    return [];
+  }
 };
 
 // 7. Devotee Booklet History
 export const getMemberBookletHistory = async (userId: string) => {
-  return [
-    { id: '1', quantity: 108000, date: new Date().toISOString(), status: 'VERIFIED' }
-  ];
+  try {
+    const snap = await getDocs(query(collection(db, 'booklet_submissions'), where('user_id', '==', userId)));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch {
+    return [];
+  }
 };
 
 // 8. Donations
@@ -241,13 +373,29 @@ export const updateUser = async (id: string, updates: any) => {
   }
 };
 
-// 12. Settings & Membership Plans
 export const getSettings = async (): Promise<any> => {
+  try {
+    const snap = await getDoc(doc(db, 'system_settings', 'config'));
+    if (snap.exists()) {
+      return {
+        upi_id: '8090525961m@pnb',
+        merchant_name: 'SHRI JAGANNATH ODIA BABA SEWA SANSTHAN',
+        maintenance_mode: false,
+        registration_enabled: true,
+        admin_signature_url: '',
+        admin_signature_text: 'Ram Nam Bank',
+        ...snap.data()
+      };
+    }
+  } catch (e) {}
+
   return {
     upi_id: '8090525961m@pnb',
     merchant_name: 'SHRI JAGANNATH ODIA BABA SEWA SANSTHAN',
     maintenance_mode: false,
-    registration_enabled: true
+    registration_enabled: true,
+    admin_signature_url: '',
+    admin_signature_text: 'Ram Nam Bank'
   };
 };
 

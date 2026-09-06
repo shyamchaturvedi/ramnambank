@@ -65,13 +65,20 @@ export default function Footer() {
                  <MapPin size={18} className="text-saffron shrink-0" />
                  <p className="leading-loose">श्री जगन्नाथ ओड़िआ बाबा सेवा संस्थान,<br /> अयोध्या धाम, उत्तर प्रदेश - 224123</p>
               </div>
-              <div className="flex items-center gap-4">
-                 <Phone size={18} className="text-saffron shrink-0" />
-                 <p>+91 99XXXXXX00</p>
+              <div className="flex items-start gap-4">
+                 <Phone size={18} className="text-saffron shrink-0 mt-0.5" />
+                 <div className="space-y-1">
+                   <p><a href="tel:+918090525961" className="hover:text-white transition-colors">+91 8090525961</a></p>
+                   <p><a href="tel:+919794640807" className="hover:text-white transition-colors">+91 9794640807</a></p>
+                 </div>
               </div>
               <div className="flex items-center gap-4">
                  <Mail size={18} className="text-saffron shrink-0" />
-                 <p className="lowercase tracking-normal">contact@ramnambank.in</p>
+                 <p className="lowercase tracking-normal">
+                   <a href="mailto:odiamathayodhya9794@gmail.com" className="hover:text-white transition-colors">
+                     odiamathayodhya9794@gmail.com
+                   </a>
+                 </p>
               </div>
             </div>
           </div>

@@ -96,7 +96,7 @@ export default function RootLayout({
     },
     "contactPoint": {
       "@type": "ContactPoint",
-      "telephone": "+91-9598023701",
+      "telephone": "+91-8090525961",
       "contactType": "Customer Service"
     }
   };

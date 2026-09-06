@@ -57,38 +57,58 @@ export default function DashboardLayout({
   // 1. Mounted Check & User Data Fetch with Firebase
   useEffect(() => {
     setMounted(true);
-    const fetchUserAndNotifications = async () => {
+    let unsubscribe = () => {};
+
+    const initAuth = async () => {
       try {
         const { auth, db } = await import('@/lib/firebase');
+        const { onAuthStateChanged } = await import('firebase/auth');
         const { doc, getDoc, collection, query, where, getDocs } = await import('firebase/firestore');
         
-        const currentUser = auth.currentUser;
-        if (currentUser) {
-          setUserName(currentUser.displayName || currentUser.email?.split('@')[0] || 'भक्त');
-          
-          try {
-            const userDoc = await getDoc(doc(db, 'members', currentUser.uid));
-            if (userDoc.exists()) {
-              const data = userDoc.data();
-              setUserName(data.full_name || currentUser.displayName || 'भक्त');
-              setProfileData(data);
-            }
-          } catch (e) {}
-        }
+        unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+          if (currentUser) {
+            setUserName(currentUser.displayName || currentUser.email?.split('@')[0] || 'भक्त');
+            
+            try {
+              let userDoc = await getDoc(doc(db, 'members', currentUser.uid));
+              let data = userDoc.exists() ? userDoc.data() : null;
+
+              if (!data && currentUser.email) {
+                const q = query(collection(db, 'members'), where('email', '==', currentUser.email));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                  data = snap.docs[0].data();
+                }
+              }
+
+              if (data) {
+                setUserName(data.full_name || currentUser.displayName || 'भक्त');
+                setProfileData(data);
+              } else {
+                setProfileData({
+                  id: currentUser.uid,
+                  full_name: currentUser.displayName || 'भक्त',
+                  role: 'DEVOTEE',
+                  status: 'ACTIVE',
+                  membership_type: 'BANK_LIFE'
+                });
+              }
+            } catch (e) {}
+          }
+          setIsLoadingProfile(false);
+        });
       } catch (err) {
         console.error("Dashboard User Fetch Error:", err);
-      } finally {
         setIsLoadingProfile(false);
       }
     };
-    fetchUserAndNotifications();
+
+    initAuth();
+    return () => unsubscribe();
   }, []);
 
-  const isDevoteeBlocked = 
-    pathname.startsWith('/dashboard/devotee') && 
-    pathname !== '/dashboard/devotee/membership' &&
-    internalUserRole !== 'ADMIN' &&
-    (!['SPECIAL_LIFE', 'LIFE', 'BANK_LIFE'].includes(profileData?.membership_type?.trim()?.toUpperCase() || ''));
+  // Unlock devotee pages - do not block active devotees
+  const isDevoteeBlocked = false;
 
   console.log("DEBUG - Membership Type:", profileData?.membership_type, "isBlocked:", isDevoteeBlocked);
 
@@ -120,6 +140,7 @@ export default function DashboardLayout({
       { name: 'डिजिटल पास (ID)', icon: Award, href: '/dashboard/devotee/pass' },
       { name: 'मेरा प्रोफाइल', icon: User, href: '/dashboard/devotee/profile' },
       { name: 'सदस्यता प्लान', icon: Award, href: '/dashboard/devotee/membership' },
+      { name: 'दान एवं सहयोग', icon: IndianRupee, href: '/dashboard/devotee/donate' },
       { name: 'मेरा लेजर', icon: FileSearch, href: '/dashboard/devotee/ledger' },
     ]
   };

@@ -27,12 +27,12 @@ const PLANS = [
   },
   {
     id: 'bank_life',
-    name: 'श्री राम नाम लिखन सदस्य',
-    description: 'श्री राम नाम महा धन संचय बैंक की नियमित लिखन सदस्यता',
+    name: 'श्री राम नाम लेखन सदस्य',
+    description: 'श्री राम नाम महा धन संचय बैंक की नियमित लेखन सदस्यता',
     amount: 360,
     icon: Zap,
     color: 'from-orange-400 to-saffron',
-    features: ['डिजिटल आजीवन कार्ड / पास', 'निःशुल्क श्री राम नाम अर्चना पुस्तिका', 'सनातनी लिखन सामग्री किट', 'वार्षिक नवीनीकरण सुविधा']
+    features: ['डिजिटल आजीवन कार्ड / पास', 'निःशुल्क श्री राम नाम अर्चना पुस्तिका', 'सनातनी लेखन सामग्री किट', 'वार्षिक नवीनीकरण सुविधा']
   }
 ];
 
@@ -46,15 +46,39 @@ export default function MembershipPage() {
   const [history, setHistory] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
+  const [activeMembership, setActiveMembership] = useState<any>(null);
+
   const fetchHistory = async (uid: string) => {
     setIsLoadingHistory(true);
     try {
       const { db } = await import('@/lib/firebase');
-      const { collection, query, where, getDocs } = await import('firebase/firestore');
+      const { collection, query, where, getDocs, doc, getDoc } = await import('firebase/firestore');
+      
+      // Fetch member profile
+      try {
+        const userDoc = await getDoc(doc(db, 'members', uid));
+        if (userDoc.exists()) {
+          const mData = userDoc.data();
+          if (mData.status === 'ACTIVE' || mData.membership_type) {
+            setActiveMembership(mData);
+          }
+        }
+      } catch (e) {}
+
       const q = query(collection(db, 'membership_requests'), where('user_id', '==', uid));
       const snap = await getDocs(q);
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const list: any[] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setHistory(list);
+
+      // Check if any approved request
+      const approved = list.find((r: any) => r.status === 'APPROVED');
+      if (approved && !activeMembership) {
+        setActiveMembership({
+          membership_type: approved.plan_name,
+          created_at: approved.created_at || new Date().toISOString(),
+          status: 'ACTIVE'
+        });
+      }
     } catch (err) {
       console.error('History fetch error:', err);
     } finally {
@@ -66,11 +90,13 @@ export default function MembershipPage() {
     const loadInitialData = async () => {
       try {
         const { auth } = await import('@/lib/firebase');
-        const user = auth.currentUser;
-        if (user) {
-          setUserId(user.uid);
-          fetchHistory(user.uid);
-        }
+        const { onAuthStateChanged } = await import('firebase/auth');
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            setUserId(user.uid);
+            fetchHistory(user.uid);
+          }
+        });
       } catch (e) {}
     };
     loadInitialData();
@@ -120,39 +146,113 @@ export default function MembershipPage() {
         </p>
       </div>
 
+      {/* Active Membership Status Banner */}
+      {activeMembership && (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="premium-card p-8 border-2 border-green-500/40 bg-green-500/[0.04] rounded-3xl relative overflow-hidden shadow-2xl"
+        >
+          <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+            <div className="flex items-center gap-5">
+              <div className="w-16 h-16 rounded-2xl bg-green-500/20 border border-green-500/40 flex items-center justify-center text-green-400 shrink-0">
+                <CheckCircle2 size={36} />
+              </div>
+              <div>
+                <div className="flex items-center gap-3">
+                  <span className="px-3 py-1 bg-green-500 text-black font-black uppercase text-[9px] tracking-widest rounded-full">
+                    सक्रिय सदस्यता (ACTIVE)
+                  </span>
+                  <span className="text-[10px] text-white/40 font-mono">
+                    ID: {activeMembership.membership_id || 'RN-OD-17-01'}
+                  </span>
+                </div>
+                <h3 className="text-2xl font-black font-serif gold-text mt-1">
+                  {activeMembership.membership_type === 'SPECIAL_LIFE' ? 'केन्द्रीय विशिष्ट आजीवन सदस्य (₹21,051)' :
+                   activeMembership.membership_type === 'LIFE' ? 'केन्द्रीय आजीवन सदस्य (₹2,151)' :
+                   activeMembership.membership_type === 'BANK_LIFE' ? 'श्री राम नाम लिखन सदस्य (₹360)' :
+                   activeMembership.membership_type || 'सक्रिय सदस्य'}
+                </h3>
+                <p className="text-[11px] text-white/60 font-bold mt-1">
+                  आपकी सदस्यता पूर्ण रूप से सक्रिय है। डिजिटल पास और सभी सेवाएँ उपलब्ध हैं।
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-black/40 border border-white/10 rounded-2xl p-4 text-right min-w-[200px]">
+              <p className="text-[9px] text-white/40 uppercase font-black tracking-widest">आगामी नवीनीकरण तिथि (Renewal)</p>
+              <p className="text-base font-black text-green-400 mt-0.5">
+                {new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString('hi-IN', {
+                  day: '2-digit', month: 'long', year: 'numeric'
+                })}
+              </p>
+              <p className="text-[8px] text-white/30 uppercase font-bold mt-1">✓ ऑटो-वेरिफाइड पास</p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {PLANS.map((plan) => (
-          <motion.div 
-            key={plan.id}
-            whileHover={{ y: -10 }}
-            className={`premium-card p-8 flex flex-col space-y-6 cursor-pointer border-2 transition-all ${selectedPlan?.id === plan.id ? 'border-saffron bg-saffron/5 shadow-[0_0_30px_rgba(245,158,11,0.2)]' : 'border-white/5 hover:border-white/20'}`}
-            onClick={() => setSelectedPlan(plan)}
-          >
-            <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${plan.color} flex items-center justify-center text-white shadow-lg`}>
-              <plan.icon size={32} />
-            </div>
-            
-            <div className="space-y-2">
-              <h3 className="text-lg font-black text-white uppercase tracking-tight">{plan.name}</h3>
-              <p className="text-[10px] text-white/40 font-bold leading-relaxed">{plan.description}</p>
-            </div>
+        {PLANS.map((plan) => {
+          const isCurrentPlan = activeMembership?.membership_type?.includes(plan.name) || 
+                                (activeMembership?.membership_type === 'SPECIAL_LIFE' && plan.id === 'special_life') ||
+                                (activeMembership?.membership_type === 'LIFE' && plan.id === 'institute_life') ||
+                                (activeMembership?.membership_type === 'BANK_LIFE' && plan.id === 'bank_life');
 
-            <div className="text-3xl font-black gold-text">₹{plan.amount}/-</div>
+          return (
+            <motion.div 
+              key={plan.id}
+              whileHover={{ y: -10 }}
+              className={`premium-card p-8 flex flex-col space-y-6 border-2 transition-all relative ${
+                isCurrentPlan 
+                  ? 'border-green-500/50 bg-green-500/[0.03] shadow-[0_0_30px_rgba(34,197,94,0.2)]'
+                  : selectedPlan?.id === plan.id 
+                    ? 'border-saffron bg-saffron/5 shadow-[0_0_30px_rgba(245,158,11,0.2)] cursor-pointer' 
+                    : 'border-white/5 hover:border-white/20 cursor-pointer'
+              }`}
+              onClick={() => {
+                if (!isCurrentPlan) setSelectedPlan(plan);
+              }}
+            >
+              {isCurrentPlan && (
+                <div className="absolute top-4 right-4 bg-green-500 text-black px-3 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest shadow-md">
+                  वर्तमान सक्रिय प्लान
+                </div>
+              )}
 
-            <ul className="space-y-3 pt-6 border-t border-white/5 flex-1">
-               {plan.features.map((f, i) => (
-                 <li key={i} className="flex items-start gap-3">
-                    <CheckCircle2 size={12} className="text-saffron mt-1 shrink-0" />
-                    <span className="text-[10px] text-white/60 font-bold uppercase tracking-tighter">{f}</span>
-                 </li>
-               ))}
-            </ul>
+              <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${plan.color} flex items-center justify-center text-white shadow-lg`}>
+                <plan.icon size={32} />
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-lg font-black text-white uppercase tracking-tight">{plan.name}</h3>
+                <p className="text-[10px] text-white/40 font-bold leading-relaxed">{plan.description}</p>
+              </div>
 
-            <button className={`w-full py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedPlan?.id === plan.id ? 'bg-saffron text-black shadow-[0_10px_20px_rgba(245,158,11,0.3)]' : 'bg-white/5 text-white/40 group-hover:text-white'}`}>
-               चुनें
-            </button>
-          </motion.div>
-        ))}
+              <div className="text-3xl font-black gold-text">₹{plan.amount}/-</div>
+
+              <ul className="space-y-3 pt-6 border-t border-white/5 flex-1">
+                 {plan.features.map((f, i) => (
+                   <li key={i} className="flex items-start gap-3">
+                      <CheckCircle2 size={12} className="text-saffron mt-1 shrink-0" />
+                      <span className="text-[10px] text-white/60 font-bold uppercase tracking-tighter">{f}</span>
+                   </li>
+                 ))}
+              </ul>
+
+              {isCurrentPlan ? (
+                <button disabled className="w-full py-4 rounded-xl text-[10px] font-black uppercase tracking-widest bg-green-500/20 text-green-400 border border-green-500/40 cursor-default">
+                  ✓ सक्रिय (Active)
+                </button>
+              ) : (
+                <button className={`w-full py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedPlan?.id === plan.id ? 'bg-saffron text-black shadow-[0_10px_20px_rgba(245,158,11,0.3)]' : 'bg-white/5 text-white/40 group-hover:text-white'}`}>
+                   {activeMembership ? 'अपग्रेड करें' : 'चुनें'}
+                </button>
+              )}
+            </motion.div>
+          );
+        })}
       </div>
 
       <AnimatePresence>

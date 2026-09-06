@@ -158,86 +158,52 @@ export default function DonateClient() {
                    <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">किसी भी UPI ऐप से स्कैन करें</p>
                 </div>
 
-                <div className="w-64 h-64 bg-white p-4 rounded-3xl mx-auto shadow-[0_0_50px_rgba(255,153,51,0.2)]">
-                   <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center border-4 border-dashed border-gray-300">
-                      <QrCode size={80} className="text-gray-400" />
-                      <span className="text-[10px] text-gray-500 mt-4 font-black uppercase tracking-widest">{upiId}</span>
-                   </div>
-                </div>
-
-                <div className="space-y-6 text-center">
-                   <div className="p-6 bg-white/5 border border-white/10 rounded-2xl">
-                      <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-2">UPI ID:</p>
-                      <p className="text-xl font-black gold-text tracking-widest">{upiId}</p>
-                   </div>
-                    <div className="p-6 bg-white/5 border border-white/10 rounded-2xl text-left space-y-4">
-                       <h5 className="text-[10px] font-black text-white/30 uppercase tracking-widest">बैंक विवरण (Bank Details)</h5>
-                       <div className="space-y-2 text-xs font-bold">
-                          <p className="text-white/60">खाता: श्री जगन्नाथ ओड़िआ बाबा सेवा संस्थान</p>
-                          <p className="text-white/60">बैंक: स्टेट बैंक ऑफ इंडिया (SBI)</p>
-                          <p className="text-white/60">IFSC: SBIN0000XXX</p>
-                       </div>
+                 <div className="w-72 bg-white p-5 rounded-3xl mx-auto shadow-[0_0_50px_rgba(255,153,51,0.25)] border-4 border-saffron/30">
+                    <div className="text-center mb-3">
+                       <p className="text-[8px] font-black text-black/70 uppercase tracking-widest leading-tight">
+                          SHRI JAGANNATH ODIA BABA SEWA SANSTHAN
+                       </p>
+                       <span className="inline-block bg-saffron text-black text-[9px] font-black uppercase px-3 py-0.5 rounded-full mt-1">
+                          SCAN & PAY
+                       </span>
                     </div>
-                </div>
+                    <div className="w-56 h-56 bg-white flex items-center justify-center mx-auto">
+                       <img 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`upi://pay?pa=8090525961m@pnb&pn=SHRI JAGANNATH ODIA BABA SEWA SANSTHAN&cu=INR`)}`}
+                          alt="Donation QR Code"
+                          className="w-full h-full object-contain"
+                       />
+                    </div>
+                    <p className="text-[10px] font-black text-black font-mono text-center tracking-wider mt-2">
+                       UPI: 8090525961m@pnb
+                    </p>
+                 </div>
 
-                <div className="flex items-center justify-center gap-3 text-[10px] font-black text-white/20 uppercase tracking-[0.2em] pt-4">
-                   <ShieldCheck size={16} className="text-saffron" />
-                   80G कर छूट उपलब्ध
-                </div>
-              </motion.div>
+                 <div className="space-y-6 text-center">
+                    <div className="p-6 bg-white/5 border border-white/10 rounded-2xl">
+                       <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-2">आधिकारिक UPI ID:</p>
+                       <p className="text-xl font-black text-saffron tracking-widest font-mono">8090525961m@pnb</p>
+                    </div>
+                     <div className="p-6 bg-white/5 border border-white/10 rounded-2xl text-left space-y-4">
+                        <h5 className="text-[10px] font-black text-white/30 uppercase tracking-widest">बैंक विवरण (Bank Details)</h5>
+                        <div className="space-y-2 text-xs font-bold">
+                           <p className="text-white/80">संस्थान: <span className="text-white font-bold">श्री जगन्नाथ ओड़िआ बाबा सेवा संस्थान</span></p>
+                           <p className="text-white/80">बैंक: <span className="text-saffron font-black">पंजाब नेशनल बैंक (PNB)</span></p>
+                           <p className="text-white/80">UPI ID: <span className="text-amber-400 font-mono">8090525961m@pnb</span></p>
+                        </div>
+                     </div>
+                 </div>
+
+                 <div className="flex items-center justify-center gap-3 text-[10px] font-black text-white/20 uppercase tracking-[0.2em] pt-4">
+                    <ShieldCheck size={16} className="text-saffron" />
+                    80G कर छूट उपलब्ध
+                 </div>
+               </motion.div>
            </div>
 
-           {/* Membership Plans Section */}
-           <section className="space-y-12">
-              <div className="text-center">
-                 <h3 className="text-saffron font-black tracking-[0.3em] uppercase text-xs mb-4">सदस्यता के प्रकार</h3>
-                 <h2 className="text-3xl md:text-5xl font-bold font-serif gold-text">संस्थान की सदस्यता ग्रहण करें</h2>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                 {membershipPlans.map((plan, i) => (
-                    <motion.div 
-                      key={plan.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.1 }}
-                      className="premium-card p-10 flex flex-col items-center text-center space-y-6 hover:border-saffron/30 transition-all"
-                    >
-                       <div className="p-4 bg-saffron/10 rounded-full text-saffron">
-                          {getIcon(plan.icon_name)}
-                       </div>
-                       <div>
-                          <h4 className="text-xl font-bold uppercase tracking-wider">{plan.title}</h4>
-                          <p className="text-[10px] text-white/30 uppercase tracking-widest font-bold mt-1">{plan.org}</p>
-                       </div>
-                       <p className="text-white/40 text-xs leading-relaxed">{plan.desc}</p>
-                       <div className="pt-4 mt-auto w-full">
-                          <div className="text-2xl font-black gold-text mb-6">{plan.amount}</div>
-                          <button className="saffron-btn w-full text-[10px]">सदस्य बनें</button>
-                       </div>
-                    </motion.div>
-                 ))}
-              </div>
-           </section>
 
-          {/* Social Proof */}
-          <section className="text-center space-y-12 pb-20">
-             <div className="inline-flex items-center gap-3 text-saffron uppercase tracking-[0.4em] text-[10px] font-black">
-                <Award size={20} /> हमारी उपलब्धियां
-             </div>
-             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                {[
-                  { label: 'कुल भक्त', value: stats?.totalBhakt || '0' },
-                  { label: 'पुस्तिका संचय', value: stats?.totalBooks || '0' },
-                  { label: 'राम नाम संचय', value: stats?.totalDonations ? (stats.totalDonations / 1000000).toFixed(1) + 'M' : '0' },
-                  { label: 'सक्रिय शाखाएं', value: stats?.totalBranches || '0' },
-                ].map((s, i) => (
-                  <div key={i} className="premium-card p-8">
-                     <h4 className="text-3xl font-black gold-text mb-2 font-mono">{s.value}</h4>
-                     <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">{s.label}</p>
-                  </div>
-                ))}
-             </div>
-          </section>
+
+
 
           {/* Payment Proof Submission */}
           <section className="premium-card p-12 space-y-10 border-t-4 border-saffron">

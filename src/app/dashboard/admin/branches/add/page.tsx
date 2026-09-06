@@ -11,18 +11,26 @@ import {
   Save
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
+import { saveBranch } from '@/services/dataService';
+
 export default function AddBranchPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
     code: '',
+    city: '',
     address: '',
+    phone: '',
     headId: '',
-    level: 'BLOCK'
+    level: 'BLOCK',
+    status: 'ACTIVE'
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   // Dummy list of users who can be assigned as Branch Head
   const availableHeads = [
@@ -33,15 +41,20 @@ export default function AddBranchPage() {
     { id: 'usr-005', name: 'निर्मल रंजन स्वाइन' },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      alert('नई शाखा सफलतापूर्वक जोड़ी गई!');
-      window.location.href = '/dashboard/admin/branches';
-    }, 1500);
+    setErrorMsg('');
+
+    const res = await saveBranch(formData);
+    setIsSubmitting(false);
+
+    if (res.success) {
+      alert('नई शाखा सफलतापूर्वक जोड़ी गई और लाइव हो गई!');
+      router.push('/dashboard/admin/branches');
+    } else {
+      setErrorMsg('त्रुटि: ' + (res.error || 'शाखा नहीं जोड़ी जा सकी'));
+    }
   };
 
   return (
@@ -100,6 +113,32 @@ export default function AddBranchPage() {
                         onChange={(e) => setFormData({...formData, code: e.target.value})}
                       />
                     </div>
+                  </div>
+
+                  {/* City / District */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest ml-2">शहर / जिला (City / District)</label>
+                    <input 
+                      required
+                      type="text" 
+                      placeholder="जैसे: कटक या Kendrapara" 
+                      className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-saffron/50 text-white text-sm"
+                      value={formData.city}
+                      onChange={(e) => setFormData({...formData, city: e.target.value})}
+                    />
+                  </div>
+
+                  {/* Phone */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest ml-2">संपर्क नंबर (Phone)</label>
+                    <input 
+                      required
+                      type="tel" 
+                      placeholder="जैसे: 8090525961" 
+                      className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-saffron/50 text-white text-sm"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    />
                   </div>
 
                   {/* Address */}

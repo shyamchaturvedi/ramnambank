@@ -169,12 +169,17 @@ export default function UserManagementPage() {
                        <tr key={user.id} className="group hover:bg-white/[0.02] transition-all">
                           <td className="px-8 py-6">
                              <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white/10 to-transparent flex items-center justify-center font-bold text-saffron border border-white/10">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white/10 to-transparent flex items-center justify-center font-bold text-saffron border border-white/10 shrink-0">
                                    {user.full_name?.charAt(0) || 'U'}
                                 </div>
                                 <div>
                                    <p className="font-bold text-sm">{user.full_name}</p>
-                                   <p className="text-[10px] text-white/30 lowercase">{user.email}</p>
+                                   <p className="text-[10px] text-white/30 lowercase">{user.email || user.mobile_number}</p>
+                                   {user.address && (
+                                     <p className="text-[9px] text-amber-400/80 font-bold mt-1 line-clamp-1 max-w-xs">
+                                       📦 डाक पता: {user.address}
+                                     </p>
+                                   )}
                                 </div>
                              </div>
                           </td>

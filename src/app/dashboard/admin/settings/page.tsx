@@ -18,11 +18,15 @@ import {
 } from 'lucide-react';
 
 export default function SettingsPage() {
-  const [upiId, setUpiId] = useState('ramnam.bank@upi');
-  const [memberFee, setMemberFee] = useState('1100');
+  const [upiId, setUpiId] = useState('8090525961m@pnb');
+  const [memberFee, setMemberFee] = useState('360');
   const [defaultCount, setDefaultCount] = useState('10000');
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [regEnabled, setRegEnabled] = useState(true);
+  const [adminSignatureUrl, setAdminSignatureUrl] = useState('');
+  const [adminSignatureText, setAdminSignatureText] = useState('Ram Nam Bank');
+  const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadSettings() {
@@ -32,6 +36,8 @@ export default function SettingsPage() {
           setMaintenanceMode(!!settings.maintenance_mode);
           setRegEnabled(settings.registration_enabled !== false);
           if (settings.upi_id) setUpiId(settings.upi_id);
+          if (settings.admin_signature_url) setAdminSignatureUrl(settings.admin_signature_url);
+          if (settings.admin_signature_text) setAdminSignatureText(settings.admin_signature_text);
         }
       } catch (e) {
         console.error("Failed to load settings:", e);
@@ -40,14 +46,33 @@ export default function SettingsPage() {
     loadSettings();
   }, []);
 
+  const handleSignatureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        const base64 = uploadEvent.target?.result as string;
+        setAdminSignatureUrl(base64);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSave = async () => {
+    setIsSaving(true);
     try {
       await updateSetting('upi_id', upiId);
       await updateSetting('maintenance_mode', maintenanceMode);
       await updateSetting('registration_enabled', regEnabled);
-      alert('सेटिंग्स सुरक्षित कर दी गई हैं!');
+      await updateSetting('admin_signature_url', adminSignatureUrl);
+      await updateSetting('admin_signature_text', adminSignatureText);
+      
+      setToast('✅ सेटिंग्स एवं हस्ताक्षर सफलतापूर्वक सुरक्षित कर दिए गए!');
+      setTimeout(() => setToast(null), 4000);
     } catch (e) {
       alert('सेटिंग्स सुरक्षित करने में त्रुटि आई।');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -98,6 +123,75 @@ export default function SettingsPage() {
                     onChange={(e) => setMemberFee(e.target.value)}
                     className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-saffron/50 text-white font-bold"
                   />
+               </div>
+            </div>
+          </div>
+
+          {/* Authorized Signature Card */}
+          <div className="premium-card p-10 space-y-10 border-t-4 border-amber-500">
+            <div className="flex items-center gap-4">
+               <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-400">
+                  <ShieldCheck size={24} />
+               </div>
+               <div>
+                  <h3 className="text-xl font-black font-serif gold-text uppercase">डिजिटल पास अधिकृत हस्ताक्षर</h3>
+                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mt-1">Devotee ID Pass Signature</p>
+               </div>
+            </div>
+
+            <div className="space-y-6">
+               <div className="space-y-4">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">हस्ताक्षर टेक्स्ट (Default)</label>
+                  <input 
+                    type="text" 
+                    value={adminSignatureText}
+                    onChange={(e) => setAdminSignatureText(e.target.value)}
+                    placeholder="e.g. Ram Nam Bank / President"
+                    className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-saffron/50 text-saffron font-bold"
+                  />
+               </div>
+
+               <div className="space-y-3">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">हस्ताक्षर फोटो / इमेज अपलोड करें (PNG/JPG)</label>
+                  <div className="flex items-center gap-4">
+                    <label className="px-5 py-3.5 bg-saffron/10 hover:bg-saffron/20 border border-saffron/30 text-saffron rounded-2xl text-xs font-black uppercase tracking-wider cursor-pointer transition-all flex items-center gap-2">
+                       <Camera size={16} />
+                       सिग्नेचर इमेज चुनें
+                       <input 
+                         type="file" 
+                         accept="image/*" 
+                         onChange={handleSignatureUpload} 
+                         className="hidden" 
+                       />
+                    </label>
+                    {adminSignatureUrl && (
+                      <button 
+                        type="button" 
+                        onClick={() => setAdminSignatureUrl('')} 
+                        className="text-[10px] text-red-400 hover:underline font-bold"
+                      >
+                        इमेज हटाएं
+                      </button>
+                    )}
+                  </div>
+               </div>
+
+               {/* Live Signature Preview */}
+               <div className="p-4 bg-black/40 border border-white/10 rounded-2xl flex flex-col items-center justify-center gap-2">
+                  <p className="text-[8px] text-white/30 uppercase font-black tracking-widest">पास पर कैसा दिखेगा (Preview):</p>
+                  <div className="h-12 flex items-center justify-center">
+                    {adminSignatureUrl ? (
+                      <img src={adminSignatureUrl} alt="Signature Preview" className="max-h-12 object-contain" />
+                    ) : (
+                      <div className="relative flex items-center justify-center -rotate-6">
+                        <span className="font-serif italic text-sm text-saffron/90 font-black tracking-tighter">{adminSignatureText || 'Ram Nam Bank'}</span>
+                        <svg className="absolute bottom-0 left-0 w-full h-4 text-saffron/40" viewBox="0 0 100 20">
+                          <path d="M5,15 Q25,5 45,15 T95,10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-[8px] text-white/40 uppercase tracking-widest">अधिकृत हस्ताक्षर</span>
                </div>
             </div>
           </div>

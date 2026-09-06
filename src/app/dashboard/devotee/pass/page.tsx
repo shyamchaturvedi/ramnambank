@@ -37,7 +37,10 @@ export default function DevoteePassPage() {
     name: profile?.full_name || 'भक्त',
     role: profile?.role || 'DEVOTEE',
     id: profile?.membership_id || profile?.id || 'RN-PENDING',
+    photo_url: profile?.photo_url || profile?.photo || '',
     branch: profile?.block ? `${profile.block}, ${profile.district}` : (profile?.branch_code || 'मुख्य शाखा'),
+    district: profile?.district || '',
+    state: profile?.state || '',
     membership_type: profile?.membership_type || 'BANK_LIFE'
   };
 
@@ -45,7 +48,7 @@ export default function DevoteePassPage() {
 
   return (
     <DashboardLayout userRole="DEVOTEE">
-      <div className="space-y-8 pb-20">
+      <div className="space-y-8 pb-20 max-w-7xl mx-auto">
         <div className="text-center md:text-left space-y-2">
           <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-saffron/10 border border-saffron/20 text-saffron text-[10px] font-black uppercase tracking-widest">
             <Sparkles size={12} />
@@ -79,18 +82,20 @@ export default function DevoteePassPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
-          <div className="flex justify-center lg:col-span-1">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 items-start">
+          {/* Main Card Column (Enlarged and given generous width) */}
+          <div className="xl:col-span-6 flex justify-center w-full">
             <DigitalIDCard user={userData} showActions={true} />
           </div>
 
-          <div className="lg:col-span-2 space-y-6">
+          {/* Benefits & Info Column */}
+          <div className="xl:col-span-6 space-y-6">
             <div className="premium-card p-8 space-y-6">
               <h3 className="text-lg font-black uppercase tracking-wider gold-text flex items-center gap-2">
                 <ShieldCheck className="text-saffron" size={20} />
                 पास के प्रमुख लाभ एवं उपयोगिता
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
                   { title: 'डिजिटल एवं फिजिकल स्वीकार्यता', desc: 'यह पास सभी 30 जिलों की शाखाओं में मान्य है।' },
                   { title: 'आध्यात्मिक बुकलेट संचय', desc: 'पास दिखाकर अपनी शाखा से निःशुल्क पुस्तिका प्राप्त करें।' },

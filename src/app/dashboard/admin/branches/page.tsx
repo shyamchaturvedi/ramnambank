@@ -14,8 +14,7 @@ import {
   X,
   Save
 } from 'lucide-react';
-import { getBranches } from '@/services/dataService';
-import { supabase } from '@/lib/supabase';
+import { getBranches, subscribeToBranches, saveBranch, deleteBranch } from '@/services/dataService';
 
 export default function AdminBranches() {
   const [branches, setBranches] = useState<any[]>([]);
@@ -36,47 +35,40 @@ export default function AdminBranches() {
   });
 
   useEffect(() => {
-    loadBranches();
-  }, []);
-
-  const loadBranches = async () => {
     setIsLoading(true);
-    const data = await getBranches();
-    setBranches(data);
-    setIsLoading(false);
-  };
+    const unsub = subscribeToBranches((data) => {
+      setBranches(data);
+      setIsLoading(false);
+    });
+    return () => unsub();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    const { data, error } = editingBranch 
-      ? await supabase.from('branches').update(formData).eq('id', editingBranch.id).select()
-      : await supabase.from('branches').insert([formData]).select();
+    const res = await saveBranch(formData, editingBranch?.id);
 
     setIsLoading(false);
 
-    if (error) {
-      setStatusMsg({ type: 'error', msg: 'त्रुटि: ' + error.message });
+    if (!res.success) {
+      setStatusMsg({ type: 'error', msg: 'त्रुटि: ' + (res.error || 'शाखा सुरक्षित नहीं हो सकी') });
     } else {
       setStatusMsg({ type: 'success', msg: editingBranch ? 'शाखा अपडेट हो गई!' : 'नई शाखा जुड़ गई!' });
       setIsModalOpen(false);
       setEditingBranch(null);
       setFormData({ name: '', code: '', city: '', address: '', phone: '', status: 'ACTIVE' });
-      loadBranches();
     }
 
     setTimeout(() => setStatusMsg({ type: '', msg: '' }), 3000);
   };
 
-  const deleteBranch = async (id: string) => {
+  const handleDeleteBranch = async (id: string) => {
     if (!confirm('क्या आप वाकई इस शाखा को हटाना चाहते हैं?')) return;
     
-    const { error } = await supabase.from('branches').delete().eq('id', id);
-    if (error) {
-      alert('हटाने में त्रुटि: ' + error.message);
-    } else {
-      loadBranches();
+    const res = await deleteBranch(id);
+    if (!res.success) {
+      alert('हटाने में त्रुटि: ' + (res.error || 'हटाया नहीं जा सका'));
     }
   };
 
@@ -166,7 +158,7 @@ export default function AdminBranches() {
                 <Edit3 size={16} />
               </button>
               <button 
-                onClick={() => deleteBranch(branch.id)}
+                onClick={() => handleDeleteBranch(branch.id)}
                 className="p-3 bg-white/5 hover:bg-red-500 hover:text-white rounded-xl text-white/40 transition-all"
               >
                 <Trash2 size={16} />

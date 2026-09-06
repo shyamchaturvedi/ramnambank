@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { UserPlus, Save, ShieldCheck, MapPin, QrCode, CreditCard } from 'lucide-react';
-import { getBranches, generateMemberId } from '@/services/dataService';
+import { getBranches, subscribeToBranches, generateMemberId } from '@/services/dataService';
 
 export default function MemberRegistration() {
   const [membership, setMembership] = useState<'REGULAR' | 'LIFE'>('REGULAR');
@@ -11,11 +11,10 @@ export default function MemberRegistration() {
   const [selectedBlock, setSelectedBlock] = useState<any>(null);
 
   React.useEffect(() => {
-    const loadBranches = async () => {
-      const data = await getBranches();
+    const unsub = subscribeToBranches((data) => {
       setBranches(data);
-    };
-    loadBranches();
+    });
+    return () => unsub();
   }, []);
 
   const districts = Array.from(new Set(branches.filter(b => b.code.startsWith('OD/')).map(b => b.city)));

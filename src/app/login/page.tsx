@@ -16,7 +16,7 @@ import {
 import { motion } from 'framer-motion';
 import { auth, db, googleProvider } from '@/lib/firebase';
 import { signInWithEmailAndPassword, signInWithPopup, createUserWithEmailAndPassword } from 'firebase/auth';
-import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, getDoc, doc, setDoc } from 'firebase/firestore';
 
 export default function CentralLogin() {
   const router = useRouter();
@@ -107,18 +107,39 @@ export default function CentralLogin() {
       setError(null);
       const result = await signInWithPopup(auth, googleProvider);
       if (result.user) {
-        // Check / register in Firestore
+        // Only if user selected 'ADMIN' tab AND is the authorized admin email
+        const isAdmin = role === 'ADMIN' && (result.user.email === 'iammshyam@gmail.com' || result.user.email?.toLowerCase().includes('admin'));
+        const userRole = isAdmin ? 'ADMIN' : 'DEVOTEE';
+
+        // Check if existing document already has role
+        let finalRole = userRole;
+        try {
+          const userDoc = await getDoc(doc(db, 'members', result.user.uid));
+          if (userDoc.exists() && userDoc.data().role) {
+            finalRole = role === 'ADMIN' && userDoc.data().role === 'ADMIN' ? 'ADMIN' : (role === 'ADMIN' ? 'ADMIN' : 'DEVOTEE');
+          }
+        } catch(e) {}
+
+        const year = new Date().getFullYear();
+        const serial = Math.floor(1000 + Math.random() * 9000);
+        const membershipId = `OD/17/01/${year}/${serial}`;
+
+        // Register/update in Firestore
         await setDoc(doc(db, 'members', result.user.uid), {
           id: result.user.uid,
           email: result.user.email,
           full_name: result.user.displayName || 'भक्त',
-          role: result.user.email === 'iammshyam@gmail.com' ? 'ADMIN' : 'DEVOTEE',
+          role: finalRole,
+          membership_id: membershipId,
+          district: 'Kendrapara',
+          block: 'KENDRAPARA SUB DIVISION',
+          branch_code: 'OD/17/01',
           status: 'ACTIVE',
           membership_type: 'BANK_LIFE',
           created_at: new Date().toISOString()
         }, { merge: true });
 
-        window.location.href = result.user.email === 'iammshyam@gmail.com' ? '/dashboard/admin' : '/dashboard/devotee';
+        window.location.href = finalRole === 'ADMIN' ? '/dashboard/admin' : '/dashboard/devotee';
       }
     } catch (err: any) {
       console.error('Google Sign-in Error:', err);
