@@ -10,8 +10,7 @@ import {
   query, 
   where, 
   orderBy, 
-  limit, 
-  Timestamp 
+  limit 
 } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 
@@ -68,7 +67,7 @@ export const createMember = async (memberData: any) => {
   }
 };
 
-// 3. Branches List (Hardcoded full Odisha list + Firestore sync)
+// 3. Branches List
 export const getBranches = async () => {
   const defaultBranches = [
     { id: '1', name: 'KENDRAPARA SUB DIVISION', code: 'OD/17/01', city: 'Kendrapara', state: 'Odisha' },
@@ -101,7 +100,6 @@ export const getBranches = async () => {
 export const getAdminStats = async () => {
   try {
     const membersSnap = await getDocs(collection(db, 'members'));
-    const requestsSnap = await getDocs(collection(db, 'membership_requests'));
     const donationsSnap = await getDocs(collection(db, 'donations'));
 
     const totalBhakt = membersSnap.size || 148;
@@ -168,4 +166,103 @@ export const updateDonationStatus = async (id: string, status: string) => {
   } catch (err: any) {
     return { success: false, error: err.message };
   }
+};
+
+export const submitDonation = async (donationData: any) => {
+  try {
+    const docRef = await addDoc(collection(db, 'donations'), {
+      ...donationData,
+      status: 'PENDING',
+      created_at: new Date().toISOString()
+    });
+    return { success: true, id: docRef.id };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+};
+
+// 9. Inventory & Stock Requests
+export const getInventory = async (branchId?: string) => {
+  return [
+    { item_name: 'BOOK', quantity: 45200 },
+    { item_name: 'PEN', quantity: 12800 }
+  ];
+};
+
+export const createStockRequest = async (data: any) => {
+  try {
+    await addDoc(collection(db, 'stock_requests'), {
+      ...data,
+      status: 'PENDING',
+      created_at: new Date().toISOString()
+    });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+};
+
+export const getStockRequests = async (branchId?: string) => {
+  try {
+    const snap = await getDocs(collection(db, 'stock_requests'));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch {
+    return [];
+  }
+};
+
+// 10. Committee Members
+export const getCommitteeMembers = async (branchCode?: string) => {
+  return [
+    { name: "NIRMAL RANJAN SWAIN", role: "President", phone: "6372858933" },
+    { name: "BICHITRA NANDA BAYEE", role: "V.President", phone: "9938103418" },
+    { name: "PRASANT KUMAR PATRA", role: "Working President", phone: "9420854091" },
+    { name: "CHANDRAKANTA NAYAK", role: "Secretary", phone: "7008367181" },
+    { name: "PRABHAKAR GRAHACHARYA", role: "Treasury", phone: "7873981619" }
+  ];
+};
+
+// 11. User Management
+export const getUsers = async () => {
+  try {
+    const snap = await getDocs(collection(db, 'members'));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch {
+    return [];
+  }
+};
+
+export const updateUser = async (id: string, updates: any) => {
+  try {
+    await updateDoc(doc(db, 'members', id), updates);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+};
+
+// 12. Settings & Membership Plans
+export const getSettings = async () => {
+  return {
+    upi_id: '8090525961m@pnb',
+    merchant_name: 'SHRI JAGANNATH ODIA BABA SEWA SANSTHAN',
+    maintenance_mode: false
+  };
+};
+
+export const updateSetting = async (key: string, value: any) => {
+  try {
+    await setDoc(doc(db, 'system_settings', 'config'), { [key]: value }, { merge: true });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+};
+
+export const getMembershipPlans = async () => {
+  return [
+    { id: '1', name: 'केन्द्रीय विशिष्ट आजीवन सदस्य', amount: 21051 },
+    { id: '2', name: 'केन्द्रीय आजीवन सदस्य', amount: 2151 },
+    { id: '3', name: 'श्री राम नाम लिखन सदस्य', amount: 360 }
+  ];
 };
