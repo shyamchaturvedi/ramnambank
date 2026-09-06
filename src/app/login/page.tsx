@@ -48,9 +48,25 @@ export default function CentralLogin() {
     try {
       let targetEmail = cleanEmail;
 
-      // Handle Phone / Membership ID format to Email
+      // Check if user entered Membership ID (e.g. OD/17/2026/001) or Mobile Number
       if (!cleanEmail.includes('@')) {
-        targetEmail = `${cleanEmail}@ramnam.bank`;
+        // If it's a Membership ID, find the user doc
+        if (cleanEmail.includes('/')) {
+          try {
+            const memberQuery = query(collection(db, 'members'), where('membership_id', '==', cleanEmail));
+            const memberSnap = await getDocs(memberQuery);
+            if (!memberSnap.empty) {
+              const data = memberSnap.docs[0].data();
+              targetEmail = data.email || `${data.mobile_number}@ramnam.bank`;
+            } else {
+              targetEmail = `${cleanEmail.replace(/[^a-zA-Z0-9]/g, '')}@ramnam.bank`;
+            }
+          } catch(err) {
+            targetEmail = `${cleanEmail.replace(/[^a-zA-Z0-9]/g, '')}@ramnam.bank`;
+          }
+        } else {
+          targetEmail = `${cleanEmail}@ramnam.bank`;
+        }
       }
 
       // Check if Admin Login
@@ -107,37 +123,52 @@ export default function CentralLogin() {
       setError(null);
       const result = await signInWithPopup(auth, googleProvider);
       if (result.user) {
-        // Only if user selected 'ADMIN' tab AND is the authorized admin email
-        const isAdmin = role === 'ADMIN' && (result.user.email === 'iammshyam@gmail.com' || result.user.email?.toLowerCase().includes('admin'));
+        const userEmail = result.user.email || '';
+        const isAdmin = role === 'ADMIN' && (userEmail === 'iammshyam@gmail.com' || userEmail.toLowerCase().includes('admin'));
         const userRole = isAdmin ? 'ADMIN' : 'DEVOTEE';
 
-        // Check if existing document already has role
-        let finalRole = userRole;
+        // 1. Check if user already registered manually with this Email
+        let existingMemberData: any = null;
+        let existingDocId = result.user.uid;
+
         try {
           const userDoc = await getDoc(doc(db, 'members', result.user.uid));
-          if (userDoc.exists() && userDoc.data().role) {
-            finalRole = role === 'ADMIN' && userDoc.data().role === 'ADMIN' ? 'ADMIN' : (role === 'ADMIN' ? 'ADMIN' : 'DEVOTEE');
+          if (userDoc.exists()) {
+            existingMemberData = userDoc.data();
+          } else if (userEmail) {
+            // Search in members collection by email
+            const q = query(collection(db, 'members'), where('email', '==', userEmail));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+              existingMemberData = snap.docs[0].data();
+              existingDocId = snap.docs[0].id;
+            }
           }
         } catch(e) {}
 
+        const finalRole = existingMemberData?.role || userRole;
         const year = new Date().getFullYear();
         const serial = Math.floor(1000 + Math.random() * 9000);
-        const membershipId = `OD/17/01/${year}/${serial}`;
+        const membershipId = existingMemberData?.membership_id || `OD/17/01/${year}/${serial}`;
 
-        // Register/update in Firestore
-        await setDoc(doc(db, 'members', result.user.uid), {
+        // Merge existing member data under this UID
+        const memberPayload = {
+          ...(existingMemberData || {}),
           id: result.user.uid,
-          email: result.user.email,
-          full_name: result.user.displayName || 'भक्त',
+          email: userEmail,
+          full_name: existingMemberData?.full_name || result.user.displayName || 'भक्त',
           role: finalRole,
           membership_id: membershipId,
-          district: 'Kendrapara',
-          block: 'KENDRAPARA SUB DIVISION',
-          branch_code: 'OD/17/01',
+          district: existingMemberData?.district || 'Kendrapara',
+          block: existingMemberData?.block || 'KENDRAPARA SUB DIVISION',
+          branch_code: existingMemberData?.branch_code || 'OD/17/01',
+          mobile_number: existingMemberData?.mobile_number || result.user.phoneNumber || '',
           status: 'ACTIVE',
-          membership_type: 'BANK_LIFE',
-          created_at: new Date().toISOString()
-        }, { merge: true });
+          membership_type: existingMemberData?.membership_type || 'BANK_LIFE',
+          last_login_at: new Date().toISOString()
+        };
+
+        await setDoc(doc(db, 'members', result.user.uid), memberPayload, { merge: true });
 
         window.location.href = finalRole === 'ADMIN' ? '/dashboard/admin' : '/dashboard/devotee';
       }
