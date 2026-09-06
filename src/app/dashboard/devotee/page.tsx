@@ -141,16 +141,22 @@ export default function DevoteeDashboard() {
                 className="object-cover scale-125 opacity-100 drop-shadow-[0_0_20px_rgba(245,158,11,0.4)]" 
               />
             </div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-saffron px-6 py-3 bg-saffron/10 rounded-full mt-4 flex items-center gap-3 border border-saffron/30 shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:scale-105 transition-all cursor-default group/tag">
-              <Star size={14} className="animate-pulse text-saffron" />
-              <span className="gold-text">
-                {profileData?.membership_type === 'SPECIAL_LIFE' ? 'केन्द्रीय विशिष्ट आजीवन सदस्य' : 
-                 profileData?.membership_type === 'LIFE' ? 'केन्द्रीय आजीवन सदस्य' : 
-                 profileData?.membership_type === 'BANK_LIFE' ? 'श्री राम नाम लिखन सदस्य' : 
-                 profileData?.membership_type === 'REGULAR' ? 'साधारण सदस्य' : 
-                 profileData?.membership_type || 'श्री राम नाम लिखन सदस्य'}
+            <div className={`text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-full mt-4 flex items-center gap-3 border transition-all ${
+              profileData?.status === 'ACTIVE' && profileData?.membership_type
+                ? 'bg-saffron/10 text-saffron border-saffron/30 shadow-[0_0_20px_rgba(245,158,11,0.2)]'
+                : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+            }`}>
+              <Star size={14} className="animate-pulse" />
+              <span>
+                {profileData?.status === 'ACTIVE' && profileData?.membership_type ? (
+                  profileData.membership_type === 'SPECIAL_LIFE' ? 'केन्द्रीय विशिष्ट आजीवन सदस्य' : 
+                  profileData.membership_type === 'LIFE' ? 'केन्द्रीय आजीवन सदस्य' : 
+                  profileData.membership_type === 'BANK_LIFE' ? 'श्री राम नाम लिखन सदस्य' : 
+                  profileData.membership_type === 'REGULAR' ? 'साधारण सदस्य' : 
+                  profileData.membership_type
+                ) : 'सदस्यता प्लान चुनें (Pending)'}
               </span>
-              <span className={`w-2 h-2 rounded-full animate-pulse ${profileData?.is_overdue ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]' : 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.8)]'}`}></span>
+              <span className={`w-2 h-2 rounded-full ${profileData?.status === 'ACTIVE' && profileData?.membership_type ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.8)]' : 'bg-amber-400 animate-ping'}`}></span>
             </div>
           </div>
         </div>

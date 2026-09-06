@@ -142,6 +142,7 @@ export default function DashboardLayout({
       { name: 'सदस्यता प्लान', icon: Award, href: '/dashboard/devotee/membership' },
       { name: 'दान एवं सहयोग', icon: IndianRupee, href: '/dashboard/devotee/donate' },
       { name: 'मेरा लेजर', icon: FileSearch, href: '/dashboard/devotee/ledger' },
+      { name: 'मेरा आर्डर एवं किट', icon: Box, href: '/dashboard/devotee/orders' },
     ]
   };
 

@@ -59,7 +59,7 @@ export default function MembershipPage() {
         const userDoc = await getDoc(doc(db, 'members', uid));
         if (userDoc.exists()) {
           const mData = userDoc.data();
-          if (mData.status === 'ACTIVE' || mData.membership_type) {
+          if (mData.status === 'ACTIVE' && mData.membership_type) {
             setActiveMembership(mData);
           }
         }

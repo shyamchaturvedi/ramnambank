@@ -62,7 +62,9 @@ export const createMember = async (memberData: any) => {
       id: uid,
       membership_id: membershipId,
       branch_code: branchCode,
-      status: 'ACTIVE',
+      status: 'PENDING_MEMBERSHIP',
+      membership_type: null,
+      delivery_status: 'NOT_ORDERED',
       created_at: new Date().toISOString()
     };
 
