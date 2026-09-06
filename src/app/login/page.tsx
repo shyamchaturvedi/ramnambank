@@ -14,7 +14,9 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { supabase } from '@/lib/supabase';
+import { auth, db, googleProvider } from '@/lib/firebase';
+import { signInWithEmailAndPassword, signInWithPopup, createUserWithEmailAndPassword } from 'firebase/auth';
+import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
 
 export default function CentralLogin() {
   const router = useRouter();
@@ -40,99 +42,87 @@ export default function CentralLogin() {
       return;
     }
 
-    console.log('Login attempt started for:', cleanEmail);
     setIsLoggingIn(true);
     setError(null);
 
     try {
-      console.log('Login process started for:', cleanEmail);
-      
-      // 1. Search the 'members' table for ANY match (Mobile, Email, or Membership ID)
-      let memberRecord = null;
-      
-      // Try Membership ID
-      const { data: byId } = await supabase.from('members').select('email, role, full_name, membership_id, password').eq('membership_id', cleanEmail).maybeSingle();
-      if (byId) memberRecord = byId;
-      
-      // Try Mobile
-      if (!memberRecord) {
-        const { data: byMobile } = await supabase.from('members').select('email, role, full_name, membership_id, password').eq('mobile_number', cleanEmail).maybeSingle();
-        if (byMobile) memberRecord = byMobile;
-      }
-      
-      // Try Email
-      if (!memberRecord && cleanEmail.includes('@')) {
-        const { data: byEmail } = await supabase.from('members').select('email, role, full_name, membership_id, password').ilike('email', cleanEmail).maybeSingle();
-        if (byEmail) memberRecord = byEmail;
-      }
-
-      console.log('Member Record Result:', memberRecord ? 'Found' : 'Not Found');
-
       let targetEmail = cleanEmail;
-      if (memberRecord?.email) {
-        targetEmail = memberRecord.email;
-        console.log('Found registered email:', targetEmail);
-      } else if (!cleanEmail.includes('@')) {
+
+      // Handle Phone / Membership ID format to Email
+      if (!cleanEmail.includes('@')) {
         targetEmail = `${cleanEmail}@ramnam.bank`;
       }
 
-      // 2. Local Password Verification (Optional but helpful for debugging sync issues)
-      if (memberRecord && memberRecord.password && memberRecord.password !== cleanPassword) {
-        console.log('Local password mismatch for:', cleanEmail);
-        setError('गलत आईडी या पासवर्ड। (Code: P-MM)');
-        setIsLoggingIn(false);
-        return;
+      // Check if Admin Login
+      if (role === 'ADMIN') {
+        if (cleanEmail === 'admin' || cleanEmail === 'iammshyam@gmail.com' || cleanEmail.includes('admin')) {
+          targetEmail = cleanEmail.includes('@') ? cleanEmail : 'iammshyam@gmail.com';
+        }
       }
 
-      // 3. Attempt Login
-      const { data: authResult, error: authError } = await supabase.auth.signInWithPassword({
-        email: targetEmail,
-        password: cleanPassword,
-      });
-
-        if (authError) {
-          console.log('Auth Failed:', authError.message);
-          
-          // 4. AUTO-SYNC: If user exists in DB but not in Auth, sync them
-          if (memberRecord) {
-            console.log('Syncing DB member to Auth...');
-            const { error: syncError } = await supabase.auth.signUp({
-              email: targetEmail,
-              password: cleanPassword,
-              options: { data: { role: memberRecord.role || 'MEMBER', full_name: memberRecord.full_name } }
-            });
-
-            if (!syncError || syncError.message.includes('already registered')) {
-              console.log('Sync/SignUp success or already registered, retrying sign-in...');
-              const { error: retryError } = await supabase.auth.signInWithPassword({
+      try {
+        // 1. Firebase Sign In
+        await signInWithEmailAndPassword(auth, targetEmail, cleanPassword);
+        window.location.href = role === 'ADMIN' ? '/dashboard/admin' : '/dashboard/devotee';
+        return;
+      } catch (authError: any) {
+        // Auto-Register or fallback if first time
+        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
+          try {
+            const userCred = await createUserWithEmailAndPassword(auth, targetEmail, cleanPassword);
+            if (userCred.user) {
+              await setDoc(doc(db, 'members', userCred.user.uid), {
+                id: userCred.user.uid,
                 email: targetEmail,
-                password: cleanPassword
-              });
-              
-              if (!retryError) {
-                console.log('Retry success, hard redirecting to /dashboard...');
-                window.location.replace('/dashboard');
-                return;
-              } else {
-                console.error('Retry Failed:', retryError.message);
-                setError('लॉगिन विफल। कृपया एडमिन से संपर्क करें। (Code: R-FAIL)');
-              }
-            } else {
-              console.error('Sync/SignUp Failed:', syncError.message);
-              setError('अकाउंट सिंक विफल। कृपया पुनः प्रयास करें।');
+                full_name: cleanEmail.split('@')[0],
+                mobile_number: cleanEmail.replace(/[^0-9]/g, '') || '9999999999',
+                role: role === 'ADMIN' ? 'ADMIN' : 'DEVOTEE',
+                status: 'ACTIVE',
+                membership_type: 'BANK_LIFE',
+                created_at: new Date().toISOString()
+              }, { merge: true });
+
+              window.location.href = role === 'ADMIN' ? '/dashboard/admin' : '/dashboard/devotee';
+              return;
             }
-          } else {
-            setError('गलत आईडी या पासवर्ड। कृपया पुनः प्रयास करें।');
+          } catch (signUpErr) {
+            // If already exists but wrong password
+            setError('गलत पासवर्ड या आईडी। कृपया सही जानकारी भरें।');
           }
         } else {
-          // Hard redirect to dashboard immediately on success
-          console.log('Login: Triggering hard redirect to /dashboard');
-          window.location.href = '/dashboard';
-          return;
+          setError(authError.message || 'लॉगिन में त्रुटि आई। कृपया पुनः प्रयास करें।');
         }
+      }
     } catch (err: any) {
       console.error('System Login Error:', err);
-      setError('सर्वर की समस्या। कृपया इंटरनेट चेक करें।');
+      setError('सर्वर से संपर्क नहीं हो पाया। कृपया इंटरनेट चेक करें।');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setIsLoggingIn(true);
+      setError(null);
+      const result = await signInWithPopup(auth, googleProvider);
+      if (result.user) {
+        // Check / register in Firestore
+        await setDoc(doc(db, 'members', result.user.uid), {
+          id: result.user.uid,
+          email: result.user.email,
+          full_name: result.user.displayName || 'भक्त',
+          role: result.user.email === 'iammshyam@gmail.com' ? 'ADMIN' : 'DEVOTEE',
+          status: 'ACTIVE',
+          membership_type: 'BANK_LIFE',
+          created_at: new Date().toISOString()
+        }, { merge: true });
+
+        window.location.href = result.user.email === 'iammshyam@gmail.com' ? '/dashboard/admin' : '/dashboard/devotee';
+      }
+    } catch (err: any) {
+      console.error('Google Sign-in Error:', err);
+      setError('Google लॉगिन में त्रुटि: ' + (err.message || 'पॉपअप बंद कर दिया गया।'));
     } finally {
       setIsLoggingIn(false);
     }
@@ -149,24 +139,14 @@ export default function CentralLogin() {
           <div className="text-center space-y-4">
              <div className="w-16 h-16 rounded-2xl bg-saffron mx-auto flex items-center justify-center text-3xl font-bold text-black">ॐ</div>
              <h1 className="text-3xl font-black font-serif gold-text uppercase tracking-widest mt-4">पोर्टल प्रवेश</h1>
-             <p className="text-[8px] text-white/10 uppercase tracking-[0.3em]">Build: {mounted ? new Date().toLocaleTimeString() : '--:--:--'} (Robust Auth V3)</p>
-             
-             <button 
-               type="button"
-               onClick={async () => {
-                 const { data, error } = await supabase.from('members').select('id').limit(1);
-                 if (error) alert('कनेक्शन एरर: ' + error.message);
-                 else alert('कनेक्शन सफल! डेटाबेस से संपर्क हो पा रहा है।');
-               }}
-               className="mt-2 text-[8px] font-black text-saffron/40 hover:text-saffron uppercase tracking-widest border border-saffron/10 px-3 py-1 rounded-full transition-all"
-             >
-                कनेक्शन जांचें (Check Status)
-             </button>
+             <p className="text-[9px] text-saffron/70 uppercase tracking-[0.3em] font-bold">
+               विश्वस्तरीय श्री राम नाम महा धन संचय बैंक
+             </p>
 
              {error && (
-                <div className={`p-3 border rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 ${error.startsWith('सफलता') ? 'bg-green-500/10 border-green-500/20 text-green-500' : 'bg-red-500/10 border-red-500/20 text-red-500'}`}>
-                   <AlertCircle size={14} />
-                   {error}
+                <div className="p-3 border rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 bg-red-500/10 border-red-500/20 text-red-500 text-left">
+                   <AlertCircle size={14} className="shrink-0" />
+                   <span>{error}</span>
                 </div>
              )}
           </div>
@@ -176,7 +156,7 @@ export default function CentralLogin() {
                onClick={() => setRole('MEMBER')}
                className={`flex-1 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${role === 'MEMBER' ? 'bg-saffron text-black' : 'text-white/40'}`}
              >
-                भक्त
+                भक्त प्रवेश
              </button>
              <button 
                onClick={() => setRole('ADMIN')}
@@ -193,7 +173,7 @@ export default function CentralLogin() {
                   type="text" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={role === 'ADMIN' ? 'एडमिन ID / ईमेल' : 'मोबाइल नंबर / भक्त ID'} 
+                  placeholder={role === 'ADMIN' ? 'एडमिन ईमेल (e.g. iammshyam@gmail.com)' : 'मोबाइल नंबर / ईमेल / भक्त ID'} 
                   className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-saffron text-white text-sm"
                 />
                 <input 
@@ -209,7 +189,7 @@ export default function CentralLogin() {
               <button 
                 type="submit"
                 disabled={isLoggingIn}
-                className="w-full bg-saffron text-black py-5 rounded-2xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all"
+                className="w-full bg-saffron text-black py-5 rounded-2xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all disabled:opacity-50"
               >
                 {isLoggingIn ? 'प्रतीक्षा करें...' : 'लॉगिन करें (Email/Password)'}
               </button>
@@ -222,24 +202,9 @@ export default function CentralLogin() {
 
               <button 
                 type="button"
-                onClick={async () => {
-                  try {
-                    setIsLoggingIn(true);
-                    const { auth, googleProvider } = await import('@/lib/firebase');
-                    const { signInWithPopup } = await import('firebase/auth');
-                    const result = await signInWithPopup(auth, googleProvider);
-                    if (result.user) {
-                      window.location.href = '/dashboard';
-                    }
-                  } catch (err: any) {
-                    console.log('Google Sign-in Fallback:', err);
-                    // Demo fallback if domain not authorized in Firebase console yet
-                    window.location.href = '/dashboard';
-                  } finally {
-                    setIsLoggingIn(false);
-                  }
-                }}
-                className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white py-4 rounded-2xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all"
+                onClick={handleGoogleLogin}
+                disabled={isLoggingIn}
+                className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white py-4 rounded-2xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -247,7 +212,7 @@ export default function CentralLogin() {
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                 </svg>
-                Google से लॉगिन करें
+                Google से 1-क्लिक लॉगिन
               </button>
           </form>
 
