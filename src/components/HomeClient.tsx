@@ -5,17 +5,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { 
   Award, 
-  History, 
-  BookOpen, 
-  ShieldCheck, 
-  Users, 
-  MapPin, 
   Menu,
   ChevronRight,
   Star,
-  PlayCircle,
-  Heart,
-  Globe,
   ArrowRight
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -45,298 +37,265 @@ export default function HomeClient() {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-saffron selection:text-black">
-        {/* Mobile Menu Overlay */}
-        <div className={`fixed inset-0 bg-black/95 backdrop-blur-2xl z-[100] transition-all duration-500 lg:hidden ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-           <div className="p-8 h-full flex flex-col">
-              <div className="flex items-center justify-between mb-16">
-                 <div className="text-xl font-bold font-serif gold-text uppercase tracking-widest">मेनू</div>
-                 <button onClick={() => setIsMobileMenuOpen(false)} className="p-3 bg-white/5 rounded-2xl text-white/40">
-                    <ArrowRight size={24} className="rotate-180" />
-                 </button>
-              </div>
-              <div className="flex-1 space-y-8">
-                 {navLinks.map((link) => (
-                    <Link key={link.href} href={link.href} className={`block text-2xl font-black uppercase tracking-widest ${link.color || 'text-white'}`}>
-                       {link.name}
-                    </Link>
-                 ))}
-              </div>
-              <div className="space-y-6 pt-10 border-t border-white/10">
-                 <Link href="/login" className="block w-full py-5 rounded-2xl border border-white/10 text-center font-black uppercase tracking-widest text-xs">प्रवेश</Link>
-                 <Link href="/open-account" className="block w-full saffron-btn py-5 text-center">खाता खोलें</Link>
-              </div>
-           </div>
+    <div className="min-h-screen bg-black text-white selection:bg-saffron selection:text-black overflow-x-hidden">
+      {/* Mobile Menu Overlay */}
+      <motion.div 
+        initial={false}
+        animate={{ opacity: isMobileMenuOpen ? 1 : 0, pointerEvents: isMobileMenuOpen ? 'auto' : 'none' }}
+        transition={{ duration: 0.3 }}
+        className={`fixed inset-0 bg-black/95 backdrop-blur-2xl z-[99] lg:hidden`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      >
+        <div onClick={(e) => e.stopPropagation()} className="p-4 sm:p-8 h-full flex flex-col">
+          <div className="flex items-center justify-between mb-8 sm:mb-16">
+            <div className="text-lg sm:text-xl font-bold font-serif gold-text uppercase tracking-widest">मेनू</div>
+            <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 sm:p-3 bg-white/5 rounded-2xl text-white/40 hover:text-saffron smooth-transition">
+              <ArrowRight size={24} className="rotate-180" />
+            </button>
+          </div>
+          <div className="flex-1 space-y-6 sm:space-y-8">
+            {navLinks.map((link) => (
+              <Link 
+                key={link.href} 
+                href={link.href} 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`block text-xl sm:text-2xl font-black uppercase tracking-widest smooth-transition hover:text-saffron ${link.color || 'text-white'}`}
+              >
+                {link.name}
+              </Link>
+            ))}
+          </div>
+          <div className="space-y-3 sm:space-y-6 pt-6 sm:pt-10 border-t border-white/10">
+            <Link href="/login" className="block w-full py-4 sm:py-5 rounded-2xl border border-white/10 text-center font-black uppercase tracking-widest text-xs sm:text-sm hover:bg-white/5 smooth-transition">प्रवेश</Link>
+            <Link href="/open-account" className="block w-full saffron-btn text-center">खाता खोलें</Link>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Premium Top Navigation */}
+      <nav className="fixed top-0 w-full z-50 bg-black/60 backdrop-blur-3xl border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 h-16 sm:h-20 md:h-24 flex items-center justify-between">
+          <div className="flex items-center gap-3 sm:gap-6">
+            <Link href="/" className="relative w-12 sm:w-16 h-12 sm:h-16 rounded-2xl overflow-hidden sacred-glow border border-saffron/20 flex-shrink-0">
+              <Image 
+                src="/logo.png" 
+                alt="Ram Nam Bank Logo" 
+                fill 
+                className="object-cover"
+                priority
+              />
+            </Link>
+            <div>
+              <h1 className="text-xs sm:text-sm font-black font-serif gold-text tracking-widest uppercase leading-tight">राम नाम बैंक</h1>
+              <p className="text-[7px] sm:text-[8px] text-white/30 uppercase tracking-[0.3em] sm:tracking-[0.4em] font-bold mt-1">अयोध्या धाम</p>
+            </div>
+          </div>
+
+          <div className="hidden lg:flex items-center gap-4 xl:gap-6 text-[9px] xl:text-[10px] font-black uppercase tracking-widest">
+            <Link href="/about" className="hover:text-saffron smooth-transition">हमारे बारे में</Link>
+            <Link href="/mission" className="hover:text-saffron smooth-transition">हमारा संकल्प</Link>
+            <Link href="/progress" className="hover:text-saffron smooth-transition">वैश्विक प्रगति</Link>
+            <Link href="/committee" className="hover:text-saffron smooth-transition">समितियां</Link>
+            <Link href="/branches" className="hover:text-saffron smooth-transition">शाखाएं</Link>
+            <Link href="/write" className="hover:text-saffron smooth-transition">लेखन विधि</Link>
+            <Link href="/donate" className="hover:text-saffron smooth-transition text-sacred-red">दान एवं सेवा</Link>
+            <Link href="/login" className="px-4 xl:px-6 py-2 rounded-full border border-white/10 hover:border-saffron/50 smooth-transition text-[9px] xl:text-[10px]">प्रवेश</Link>
+            <Link href="/open-account" className="saffron-btn text-[9px] xl:text-[10px] px-4 xl:px-6">खाता खोलें</Link>
+          </div>
+
+          <button 
+            onClick={() => setIsMobileMenuOpen(true)} 
+            className="lg:hidden text-white p-2 sm:p-3 bg-white/5 rounded-xl border border-white/10 hover:bg-saffron/10 smooth-transition"
+          >
+            <Menu size={24} />
+          </button>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 sm:pt-24 md:pt-32 pb-10 sm:pb-12">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/40 to-black z-10"></div>
+          <Image 
+            src="/hero.png" 
+            alt="अयोध्या धाम" 
+            fill 
+            className="object-cover animate-slow-pan"
+            priority
+          />
         </div>
 
-        {/* Premium Top Navigation */}
-        <nav className="fixed top-0 w-full z-50 bg-black/60 backdrop-blur-3xl border-b border-white/5">
-          <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
-             <div className="flex items-center gap-6">
-                <Link href="/" className="relative w-16 h-16 rounded-2xl overflow-hidden sacred-glow border border-saffron/20">
-                   <Image 
-                     src="/logo.png" 
-                     alt="Ram Nam Bank Logo" 
-                     fill 
-                     className="object-cover"
-                   />
-                </Link>
-                <div>
-                   <h1 className="text-sm font-black font-serif gold-text tracking-widest uppercase leading-none">राम नाम बैंक</h1>
-                   <p className="text-[8px] text-white/30 uppercase tracking-[0.4em] font-bold mt-1">अयोध्या धाम</p>
-                </div>
-             </div>
-
-             <div className="hidden lg:flex items-center gap-6 text-[10px] font-black uppercase tracking-widest">
-                <Link href="/about" className="hover:text-saffron transition-colors">हमारे बारे में</Link>
-                <Link href="/mission" className="hover:text-saffron transition-colors">हमारा संकल्प</Link>
-                <Link href="/progress" className="hover:text-saffron transition-colors">वैश्विक प्रगति</Link>
-                 <Link href="/committee" className="hover:text-saffron transition-colors">समितियां</Link>
-                 <Link href="/branches" className="hover:text-saffron transition-colors">शाखाएं</Link>
-                 <Link href="/write" className="hover:text-saffron transition-colors">लेखन विधि</Link>
-                 <Link href="/donate" className="hover:text-saffron transition-colors text-sacred-red">दान एवं सेवा</Link>
-                <Link href="/login" className="px-6 py-2 rounded-full border border-white/10 hover:border-saffron/50 transition-all">प्रवेश</Link>
-                <Link href="/open-account" className="saffron-btn">खाता खोलें</Link>
-             </div>
-
-             <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden text-white p-3 bg-white/5 rounded-xl border border-white/10">
-                <Menu size={28} />
-             </button>
-          </div>
-        </nav>
-
-        {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden py-24 md:py-32">
-          <div className="absolute inset-0 z-0">
-            <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/40 to-black z-10"></div>
-            <Image 
-              src="/hero.png" 
-              alt="अयोध्या धाम" 
-              fill 
-              className="object-cover animate-slow-pan"
-              priority
-            />
-          </div>
-
-          <div className="relative z-20 text-center px-6 max-w-5xl">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-saffron/10 border border-saffron/20 text-saffron text-[10px] font-black tracking-[0.3em] uppercase mb-6 backdrop-blur-md"
-            >
-               <Award size={16} />
-               अयोध्या धाम से संचालित
-            </motion.div>
-            
-            <motion.h1 
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 0.2 }}
-              className="text-5xl md:text-8xl font-black mb-6 py-6 tracking-tight leading-tight"
-            >
-              वह धन जो सदैव <br />
-              <span className="gold-text py-2 px-2 drop-shadow-[0_10px_30px_rgba(255,215,0,0.3)]">सार्थक रहेगा।</span>
-            </motion.h1>
-
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 1, delay: 0.5 }}
-              className="text-base md:text-xl text-white/70 max-w-3xl mx-auto mb-10 leading-relaxed font-light"
-            >
-               विश्व के सबसे अनूठे आध्यात्मिक कोष से जुड़ें, जहाँ भक्त प्रभु श्री राम के पावन नाम को हस्तलिखित "अर्चना पुस्तिका" के रूप में संचित करते हैं।
-            </motion.p>
-            
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1, delay: 0.7 }}
-              className="mb-12 p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm inline-block"
-            >
-              <p className="text-xl md:text-2xl font-serif gold-text italic tracking-wide">
-                “राम नाम के लिखने से ही जीवन का कल्याण संभव है।”
-              </p>
-            </motion.div>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-               <Link href="/open-account" className="saffron-btn scale-110 group">
-                  खाता खोलें 
-                  <ArrowRight size={16} className="inline ml-2 group-hover:translate-x-1 transition-transform" />
-               </Link>
-               <Link href="/mission" className="px-10 py-4 rounded-xl border border-white/20 font-bold text-xs tracking-widest uppercase hover:bg-white/5 transition-all">हमारा लक्ष्य</Link>
-            </div>
-          </div>
+        <div className="relative z-20 text-center px-4 sm:px-6 max-w-5xl mx-auto">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 rounded-full bg-saffron/10 border border-saffron/20 text-saffron text-[8px] sm:text-[10px] font-black tracking-[0.2em] sm:tracking-[0.3em] uppercase mb-4 sm:mb-6 backdrop-blur-sm"
+          >
+            <Award size={14} className="flex-shrink-0" />
+            <span>अयोध्या धाम से संचालित</span>
+          </motion.div>
           
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce opacity-20 hidden md:block">
-             <ChevronRight size={32} className="rotate-90" />
+          <motion.h1 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.2 }}
+            className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-4 sm:mb-6 py-3 sm:py-6 tracking-tight leading-tight"
+          >
+            वह धन जो सदैव <br />
+            <span className="gold-text py-1 sm:py-2 px-1 sm:px-2 drop-shadow-[0_10px_30px_rgba(255,215,0,0.3)]">सार्थक रहेगा।</span>
+          </motion.h1>
+
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 0.5 }}
+            className="text-sm sm:text-base md:text-lg text-white/70 max-w-3xl mx-auto mb-6 sm:mb-10 leading-relaxed font-light"
+          >
+            विश्व के सबसे अनूठे आध्यात्मिक कोष से जुड़ें, जहाँ भक्त प्रभु श्री राम के पावन नाम का संचय करते हैं।
+          </motion.p>
+          
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, delay: 0.7 }}
+            className="mb-8 sm:mb-12 p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm inline-block"
+          >
+            <p className="text-base sm:text-lg md:text-xl font-serif gold-text italic tracking-wide">
+              "राम नाम के लिखने से ही जीवन का कल्याण संभव है।"
+            </p>
+          </motion.div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+            <Link href="/open-account" className="saffron-btn w-full sm:w-auto justify-center group">
+              खाता खोलें 
+              <ArrowRight size={16} className="inline ml-2 group-hover:translate-x-1 smooth-transition" />
+            </Link>
+            <Link href="/mission" className="w-full sm:w-auto px-8 sm:px-10 py-3 sm:py-4 rounded-xl border border-white/20 font-bold text-xs sm:text-sm tracking-widest uppercase hover:bg-white/5 smooth-transition text-center">
+              हमारा लक्ष्य
+            </Link>
           </div>
-        </section>
+        </div>
+        
+        <motion.div 
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 opacity-20 hidden md:block"
+        >
+          <ChevronRight size={32} className="rotate-90" />
+        </motion.div>
+      </section>
 
-        {/* Certificate & Awards Showcase Section (New) */}
-        <section id="awards" className="py-32 px-6 bg-[#050505] relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-saffron/5 rounded-full blur-[150px] -mr-64 -mt-64"></div>
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-20 space-y-4">
-               <h3 className="text-saffron font-black tracking-[0.3em] uppercase text-xs">परम सम्मान एवं मान्यता</h3>
-               <h2 className="text-4xl md:text-6xl font-bold font-serif">साधना के मील के पत्थर</h2>
-               <p className="text-white/40 max-w-2xl mx-auto uppercase text-[10px] tracking-widest font-bold">आपकी निरंतर साधना को बैंक द्वारा विशेष रूप से सम्मानित किया जाता है</p>
-            </div>
+      {/* Stats Section */}
+      <section className="py-12 sm:py-16 md:py-20 lg:py-32 px-4 sm:px-6 md:px-8 bg-black relative">
+        <div className="max-w-7xl mx-auto">
+          <div className="premium-card p-6 sm:p-10 md:p-16 lg:p-20 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-64 sm:w-96 h-64 sm:h-96 bg-saffron/5 rounded-full blur-[100px] -mr-32 sm:-mr-48 -mt-32 sm:-mt-48 smooth-transition group-hover:bg-saffron/10"></div>
+            
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 md:gap-16 items-center">
+              <div>
+                <h3 className="text-saffron font-black tracking-[0.3em] uppercase text-xs mb-3 sm:mb-4">वैश्विक आध्यात्मिक कोष</h3>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold font-serif mb-4 sm:mb-6 leading-tight">हस्तलिखित संचित राम नाम</h2>
+                <p className="text-white/40 text-xs sm:text-sm mb-6 sm:mb-10 leading-relaxed uppercase tracking-widest font-bold">प्रत्येक अक्षर आपकी श्रद्धा का प्रतीक है।</p>
+                <Link href="/progress" className="px-6 sm:px-8 py-2 sm:py-3 rounded-xl bg-white/5 border border-white/10 text-xs sm:text-[10px] font-black uppercase tracking-widest hover:bg-white/10 smooth-transition inline-block">
+                  विस्तृत प्रगति देखें
+                </Link>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-               {/* Achievement 1 */}
-               <motion.div whileHover={{ y: -10 }} className="premium-card p-10 space-y-8 group border-b-4 border-white/5 hover:border-saffron/50 transition-all">
-                  <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-white/20 group-hover:bg-saffron/10 group-hover:text-saffron transition-all">
-                    <Award size={32} />
-                  </div>
-                  <div className="space-y-4">
-                    <h4 className="text-xl font-bold gold-text">सहभागिता प्रमाण पत्र</h4>
-                    <p className="text-[10px] text-white/40 uppercase tracking-widest leading-relaxed">1 पुस्तिका (Booklet) पूर्ण होने पर डिजिटल प्रमाण पत्र प्रदान किया जाता है।</p>
-                  </div>
-                  <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                     <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">योग्यता: 1 पुस्तिका</span>
-                     <span className="px-3 py-1 rounded-full bg-white/5 text-[8px] font-black uppercase text-white/40">डिजिटल</span>
-                  </div>
-               </motion.div>
-
-               {/* Achievement 2 */}
-               <motion.div whileHover={{ y: -10 }} className="premium-card p-10 space-y-8 group border-b-4 border-saffron/20 hover:border-saffron/50 transition-all relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4">
-                     <Star size={20} className="text-saffron animate-pulse" />
-                  </div>
-                  <div className="w-16 h-16 rounded-2xl bg-saffron/10 flex items-center justify-center text-saffron shadow-[0_0_20px_rgba(255,153,51,0.2)]">
-                    <Award size={32} />
-                  </div>
-                  <div className="space-y-4">
-                    <h4 className="text-xl font-bold gold-text">विशेष साधक सम्मान</h4>
-                    <p className="text-[10px] text-white/40 uppercase tracking-widest leading-relaxed">5+ पुस्तिकाएं पूर्ण करने पर विशेष मुद्रित प्रमाण पत्र एवं अंगवस्त्र प्रदान किया जाता है।</p>
-                  </div>
-                  <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                     <span className="text-[9px] font-black text-saffron uppercase tracking-widest">योग्यता: 5+ पुस्तिकाएं</span>
-                     <span className="px-3 py-1 rounded-full bg-saffron/20 text-[8px] font-black uppercase text-saffron">मुद्रित</span>
-                  </div>
-               </motion.div>
-
-               {/* Achievement 3 */}
-               <motion.div whileHover={{ y: -10 }} className="premium-card p-10 space-y-8 group border-b-4 border-sacred-red/20 hover:border-sacred-red/50 transition-all">
-                  <div className="w-16 h-16 rounded-2xl bg-sacred-red/10 flex items-center justify-center text-sacred-red">
-                    <Award size={32} />
-                  </div>
-                  <div className="space-y-4">
-                    <h4 className="text-xl font-bold text-sacred-red">राम रत्न सम्मान</h4>
-                    <p className="text-[10px] text-white/40 uppercase tracking-widest leading-relaxed">11+ पुस्तिकाएं पूर्ण करने पर अयोध्या मुख्यालय से स्मृति चिन्ह एवं विशेष पदक प्रदान किया जाता है।</p>
-                  </div>
-                  <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                     <span className="text-[9px] font-black text-sacred-red uppercase tracking-widest">योग्यता: 11+ पुस्तिकाएं</span>
-                     <span className="px-3 py-1 rounded-full bg-sacred-red/20 text-[8px] font-black uppercase text-sacred-red">सर्वोच्च</span>
-                  </div>
-               </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* Global Counter Section */}
-        <section id="stats" className="py-32 px-6 bg-black relative">
-          <div className="max-w-7xl mx-auto">
-            <div className="premium-card p-12 md:p-20 relative overflow-hidden group">
-               <div className="absolute top-0 right-0 w-96 h-96 bg-saffron/5 rounded-full blur-[100px] -mr-48 -mt-48 transition-all group-hover:bg-saffron/10"></div>
-               
-               <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                  <div>
-                    <h3 className="text-saffron font-black tracking-[0.3em] uppercase text-xs mb-4">वैश्विक आध्यात्मिक कोष</h3>
-                     <h2 className="text-3xl md:text-5xl font-bold font-serif mb-6 leading-tight">हस्तलिखित संचित <br /> कुल राम नाम</h2>
-                     <p className="text-white/40 text-sm mb-10 leading-relaxed uppercase tracking-widest font-bold">प्रत्येक अक्षर आपकी श्रद्धा का प्रतीक है</p>
-                    <div className="flex gap-4">
-                       <Link href="/progress" className="px-8 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">विस्तृत रिपोर्ट देखें</Link>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <div className="p-8 rounded-3xl bg-white/5 border border-white/10 text-center">
-                        <h4 className="text-4xl font-black gold-text mb-2 font-mono tracking-tighter">1,245 Cr</h4>
-                        <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">कुल संचित नाम</p>
-                     </div>
-                     <div className="p-8 rounded-3xl bg-white/5 border border-white/10 text-center">
-                        <h4 className="text-4xl font-black gold-text mb-2 font-mono tracking-tighter">
-                          {stats?.totalBhakt ? stats.totalBhakt.toLocaleString() : '6,000'}+
-                        </h4>
-                        <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">सक्रिय भक्त</p>
-                     </div>
-                     <div className="p-8 rounded-3xl bg-white/5 border border-white/10 text-center">
-                        <h4 className="text-4xl font-black gold-text mb-2 font-mono tracking-tighter">
-                          {stats?.totalBranches || '30'}+
-                        </h4>
-                        <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">वैश्विक शाखाएं</p>
-                     </div>
-                     <div className="p-8 rounded-3xl bg-saffron/10 border border-saffron/20 text-center">
-                        <h4 className="text-4xl font-black text-saffron mb-2 font-mono tracking-tighter">108</h4>
-                        <p className="text-[10px] font-black text-saffron/60 uppercase tracking-widest">देशों में उपस्थिति</p>
-                     </div>
-                  </div>
-               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Devotees Experience Section */}
-        <section className="py-32 px-6 bg-black relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-saffron/30 to-transparent"></div>
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-20">
-               <h3 className="text-saffron font-black tracking-[0.3em] uppercase text-xs mb-4">श्रद्धा एवं विश्वास</h3>
-               <h2 className="text-4xl md:text-6xl font-bold font-serif mb-6">भक्तों के अनुभव</h2>
-               <p className="text-white/40 max-w-2xl mx-auto">राम नाम संचय के पथ पर चलने वाले श्रद्धालुओं की आपबीती और आध्यात्मिक अनुभूतियां।</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[
-                {
-                  name: "राम प्रसाद",
-                  city: "अयोध्या",
-                  exp: "राम नाम अर्चना पुस्तिका में लिखने से मेरे जीवन में एक अद्भुत शांति का अनुभव हुआ है। हस्तलिपि में नाम संचित करना अब मेरी दिनचर्या का हिस्सा है।"
-                },
-                {
-                  name: "सीता देवी",
-                  city: "वाराणसी",
-                  exp: "सनातनी पेन से राम नाम लिखना बहुत ही प्रभावशाली है। यह हमें हर पल प्रभु के करीब और एकाग्र रखता है।"
-                },
-                {
-                  name: "राजेश खन्ना",
-                  city: "मुंबई",
-                  exp: "जब से मैंने अपनी पहली अर्चना पुस्तिका पूर्ण की है, मेरी मानसिक एकाग्रता बढ़ी है और मुझे प्रभु की उपस्थिति का आभास होता है।"
-                }
-              ].map((item, idx) => (
-                <div key={idx} className="p-10 rounded-3xl bg-white/5 border border-white/10 hover:border-saffron/30 transition-all group">
-                   <div className="flex gap-1 text-saffron mb-6">
-                      {[...Array(5)].map((_, i) => <Star key={i} size={16} fill="currentColor" />)}
-                   </div>
-                   <p className="text-white/70 italic mb-8 leading-relaxed">"{item.exp}"</p>
-                   <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-saffron/20 flex items-center justify-center font-bold text-saffron">
-                        {item.name[0]}
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-sm">{item.name}</h4>
-                        <p className="text-[10px] text-white/30 uppercase tracking-widest">{item.city}</p>
-                      </div>
-                   </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div className="p-6 sm:p-8 rounded-3xl bg-white/5 border border-white/10 text-center hover:border-saffron/50 smooth-transition">
+                  <h4 className="text-3xl sm:text-4xl font-black gold-text mb-2 font-mono tracking-tighter">1.2B</h4>
+                  <p className="text-[8px] sm:text-[10px] font-black text-white/30 uppercase tracking-widest">कुल संचित नाम</p>
                 </div>
-              ))}
+                <div className="p-6 sm:p-8 rounded-3xl bg-white/5 border border-white/10 text-center hover:border-saffron/50 smooth-transition">
+                  <h4 className="text-3xl sm:text-4xl font-black gold-text mb-2 font-mono tracking-tighter">
+                    {stats?.totalBhakt ? stats.totalBhakt.toLocaleString() : '6K'}+
+                  </h4>
+                  <p className="text-[8px] sm:text-[10px] font-black text-white/30 uppercase tracking-widest">सक्रिय भक्त</p>
+                </div>
+                <div className="p-6 sm:p-8 rounded-3xl bg-white/5 border border-white/10 text-center hover:border-saffron/50 smooth-transition">
+                  <h4 className="text-3xl sm:text-4xl font-black gold-text mb-2 font-mono tracking-tighter">
+                    {stats?.totalBranches || '30'}+
+                  </h4>
+                  <p className="text-[8px] sm:text-[10px] font-black text-white/30 uppercase tracking-widest">वैश्विक शाखाएं</p>
+                </div>
+                <div className="p-6 sm:p-8 rounded-3xl bg-saffron/10 border border-saffron/20 text-center">
+                  <h4 className="text-3xl sm:text-4xl font-black text-saffron mb-2 font-mono tracking-tighter">108</h4>
+                  <p className="text-[8px] sm:text-[10px] font-black text-saffron/60 uppercase tracking-widest">देशों में उपस्थिति</p>
+                </div>
+              </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Call to Action Section */}
-        <section className="py-32 px-6 bg-gradient-to-b from-black to-[#050505]">
-          <div className="max-w-4xl mx-auto text-center space-y-12">
-             <div className="w-20 h-20 rounded-3xl bg-saffron/10 flex items-center justify-center text-3xl font-bold gold-text mx-auto sacred-glow">ॐ</div>
-             <h2 className="text-4xl md:text-6xl font-black font-serif leading-tight">क्या आप अपनी आध्यात्मिक <br /> पूंजी संचित करने के लिए <span className="gold-text">तैयार हैं?</span></h2>
-             <p className="text-white/40 text-lg md:text-xl font-light leading-relaxed">अयोध्या धाम के पावन मार्गदर्शन में अपने जीवन को राम मय बनाएं।</p>
-             <div className="pt-6">
-                <Link href="/open-account" className="saffron-btn scale-125">अभी अपना खाता खोलें</Link>
-             </div>
+      {/* Testimonials */}
+      <section className="py-12 sm:py-16 md:py-20 lg:py-32 px-4 sm:px-6 md:px-8 bg-black relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-saffron/30 to-transparent"></div>
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12 sm:mb-16 md:mb-20">
+            <h3 className="text-saffron font-black tracking-[0.3em] uppercase text-xs mb-3 sm:mb-4">श्रद्धा एवं विश्वास</h3>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold font-serif mb-4 sm:mb-6">भक्तों के अनुभव</h2>
+            <p className="text-white/40 max-w-2xl mx-auto text-xs sm:text-sm">राम नाम संचय के पथ पर चलने वाले श्रद्धालुओं की प्रेरणादायक कहानियाँ।</p>
           </div>
-        </section>
 
-        <Footer />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+            {[
+              {
+                name: "राम प्रसाद",
+                city: "अयोध्या",
+                exp: "राम नाम संचय से मेरे जीवन में आध्यात्मिक शांति आई है।",
+              },
+              {
+                name: "सीता देवी",
+                city: "वाराणसी",
+                exp: "यह यात्रा मुझे प्रभु के अधिक करीब ले गई है।",
+              },
+              {
+                name: "राजेश खन्ना",
+                city: "मुंबई",
+                exp: "मानसिक शांति और आत्मिक विकास अद्भुत है।",
+              }
+            ].map((item, idx) => (
+              <motion.div 
+                key={idx} 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                className="p-6 sm:p-8 md:p-10 rounded-3xl bg-white/5 border border-white/10 hover:border-saffron/30 smooth-transition group"
+              >
+                <div className="flex gap-1 text-saffron mb-4 sm:mb-6">
+                  {[...Array(5)].map((_, i) => <Star key={i} size={14} className="sm:w-4 sm:h-4" fill="currentColor" />)}
+                </div>
+                <p className="text-white/70 italic mb-6 sm:mb-8 leading-relaxed text-sm sm:text-base">\"{ item.exp}\"</p>
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-saffron/20 flex items-center justify-center font-bold text-saffron flex-shrink-0 text-sm sm:text-base">
+                    {item.name[0]}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-xs sm:text-sm">{item.name}</h4>
+                    <p className="text-[8px] sm:text-[10px] text-white/30 uppercase tracking-widest">{item.city}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-12 sm:py-16 md:py-20 lg:py-32 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-black to-[#050505]">
+        <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-8 md:space-y-12">
+          <div className="w-16 sm:w-20 h-16 sm:h-20 rounded-3xl bg-saffron/10 flex items-center justify-center text-2xl sm:text-3xl font-bold gold-text mx-auto sacred-glow">ॐ</div>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black font-serif leading-tight">क्या आप अपनी आध्यात्मिक पूंजी संचित करना चाहते हैं?</h2>
+          <p className="text-white/40 text-sm sm:text-base md:text-lg font-light leading-relaxed">अयोध्या धाम के पावन मार्गदर्शन में आज ही शुरुआत करें।</p>
+          <div className="pt-4 sm:pt-6">
+            <Link href="/open-account" className="saffron-btn inline-block sm:scale-110">अभी अपना खाता खोलें</Link>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
     </div>
   );
 }
